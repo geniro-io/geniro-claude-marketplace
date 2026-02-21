@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Auto-bump patch version before every push
-# This ensures the plugin version increments with each push to the remote.
+# Auto-bump patch version before every commit
+# The version bump is staged automatically so it's included in the same commit.
 
 set -euo pipefail
 
@@ -28,8 +28,7 @@ with open('$MARKETPLACE_JSON', 'w') as f:
     f.write('\n')
 "
 
-# Stage and commit the version bump
+# Stage the version bump so it's included in this commit
 git add "$MARKETPLACE_JSON"
-git commit -m "chore: bump version to $NEW_VERSION" --no-verify
 
-echo "✓ Version bumped to $NEW_VERSION"
+echo "✓ Version bumped to $NEW_VERSION (staged)"
