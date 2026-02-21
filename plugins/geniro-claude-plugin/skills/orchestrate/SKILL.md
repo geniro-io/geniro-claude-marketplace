@@ -72,6 +72,7 @@ Additional context:
 - Step-by-step implementation plan with verification steps
 - Key test scenarios
 - Explored files list
+- **Minor Improvements Applied** (if any) — small fixes the architect implemented directly during exploration (typos, dead code, stale comments, etc.). Note these in the summary but don't re-review them.
 
 **For complex tasks** — if the architect returns a Phase 1 design proposal with open questions or multiple approaches, present the proposal to the user and wait for confirmation before asking the architect to produce the full spec (Phase 2).
 
@@ -137,6 +138,7 @@ Work in the geniro-web/ directory.
 - Use Ant Design components
 - Follow existing component patterns in src/pages/
 - Run `pnpm run full-check` in geniro-web/ and fix any errors
+- **Visually verify your changes with Playwright** — navigate to affected pages, take screenshots, verify layout and interactions work correctly
 - After completing, report any new patterns, gotchas, or useful commands you discovered
 ```
 

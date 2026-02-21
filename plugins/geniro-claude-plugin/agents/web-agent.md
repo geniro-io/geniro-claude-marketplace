@@ -167,6 +167,99 @@ This builds the project (catches TypeScript errors) and runs linting with auto-f
 
 ---
 
+## Visual Verification with Playwright (MANDATORY)
+
+After `full-check` passes, you MUST visually verify your changes using Playwright browser automation. This catches UI issues that builds and lints miss — broken layouts, invisible elements, wrong colors, missing interactions.
+
+### Setup
+
+The dev server should be running. If not, start it:
+
+```bash
+cd geniro-web && pnpm dev &
+```
+
+Wait for the dev server to be ready (typically `http://localhost:5173`).
+
+### Verification Steps
+
+Use the `mcp__playwright__` tools to verify your changes:
+
+1. **Navigate** to the page(s) affected by your changes:
+   ```
+   mcp__playwright__browser_navigate → URL of the affected page
+   ```
+
+2. **Take a snapshot** to understand the page structure:
+   ```
+   mcp__playwright__browser_snapshot
+   ```
+
+3. **Visually inspect** — take a screenshot and review it:
+   ```
+   mcp__playwright__browser_take_screenshot
+   ```
+
+4. **Verify interactions** — if you changed interactive elements (buttons, forms, dropdowns, modals):
+   - Click the element using `mcp__playwright__browser_click`
+   - Verify the expected result (modal opens, form submits, state changes)
+   - Take another screenshot to confirm
+
+5. **Check edge cases** — if relevant:
+   - Empty states (no data)
+   - Loading states
+   - Error states (disconnect network or mock error)
+   - Responsive behavior (resize browser with `mcp__playwright__browser_resize`)
+
+### What to Verify
+
+- **Layout**: Components render in the correct position, no overlapping, proper spacing
+- **Content**: Correct text, labels, icons, and data displayed
+- **Interactions**: Buttons clickable, forms submittable, dropdowns open, modals appear
+- **State changes**: UI updates correctly after user actions
+- **No regressions**: Existing features on the same page still work
+
+### Authentication
+
+If the page requires auth (most Geniro pages do), you may need to:
+1. Navigate to the login page first
+2. Use `mcp__playwright__browser_snapshot` to find the login form
+3. Fill credentials using `mcp__playwright__browser_fill_form` or `mcp__playwright__browser_type`
+4. Complete the auth flow before navigating to the target page
+
+If auth is not available in the dev environment, note this in your report and skip visual verification for auth-gated pages.
+
+### Reporting
+
+Include a **"Visual Verification"** section in your completion report:
+- Pages visited and verified
+- Screenshots taken (describe what was checked)
+- Any visual issues found and fixed
+- If verification was skipped, explain why (e.g., auth not available, page requires specific data)
+
+**The task is NOT done until both `full-check` passes AND visual verification is complete** (or explicitly skipped with justification).
+
+---
+
+## Data Safety Rules (MANDATORY — zero tolerance)
+
+**NEVER delete, modify, or overwrite existing entities** in the application — this includes graphs, knowledge repos, chat threads, nodes, revisions, users, or any other persistent data. Existing data belongs to real users and must remain untouched.
+
+**If you need to test your changes with real data in the UI:**
+
+1. **Create new test entities** — always prefix names with `[TEST]` so they are clearly identifiable (e.g., `[TEST] Graph for sidebar layout`, `[TEST] Knowledge repo for search feature`).
+2. **Verify your changes** using only the test entities you created.
+3. **Delete all test entities** when verification is complete — leave no test data behind.
+4. **Never reuse existing entities** for testing, even if they look like test data from previous sessions.
+
+**If a task requires modifying the shape or behavior of existing entities** (e.g., adding a new field to graph cards, changing how revisions display), verify by:
+- Creating new test entities that exercise the changed behavior
+- Navigating to pages showing existing entities to confirm no regressions (visual check only — do not edit them)
+
+**If you accidentally modify or delete existing data**, report it immediately in your completion report as a critical issue.
+
+---
+
 ## Environment Hygiene
 
 - Prefer existing project tooling over ad-hoc temporary scripts.
@@ -182,12 +275,14 @@ This builds the project (catches TypeScript errors) and runs linting with auto-f
 2. **Read `claude.md`** in geniro-web/ for full project context.
 3. **Explore existing code** — find related components and understand current patterns (use subagents for broad exploration).
 4. **Implement** following existing patterns (Refine hooks, Ant Design components, feature-based structure).
-5. **Run `pnpm run full-check`** in `geniro-web/` and fix ALL failures. **Do NOT report the task as done until `full-check` passes.**
-6. **Report back** concisely with:
+5. **Run `pnpm run full-check`** in `geniro-web/` and fix ALL failures.
+6. **Visual verification with Playwright** — navigate to affected pages, take screenshots, verify layout/interactions/state changes. See "Visual Verification with Playwright" section above.
+7. **Report back** concisely with:
    - Files created/modified (with inline paths)
    - Key decisions and assumptions
    - Any deviations from the spec and why
    - `full-check` result (pass/fail)
+   - **Visual verification** result — pages checked, screenshots reviewed, issues found/fixed (or why skipped)
    - Whether API client regeneration is needed (`pnpm generate:api`)
    - Any remaining concerns or follow-ups
    - **Learnings discovered** — new patterns, gotchas, useful commands, or surprising behaviors found during this task (the orchestrator will save these to the knowledge base)

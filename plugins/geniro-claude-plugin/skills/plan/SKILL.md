@@ -5,6 +5,8 @@ context: fork
 agent: architect-agent
 allowed-tools:
   - Read
+  - Write
+  - Edit
   - Glob
   - Grep
   - Bash
