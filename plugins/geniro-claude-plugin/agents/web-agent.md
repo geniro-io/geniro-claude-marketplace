@@ -50,12 +50,15 @@ src/
 
 ## Code Standards
 
-### Follow the Repo
+### Follow the Repo — Reuse First
 
 - Match existing code style, naming conventions, file structure, architectural boundaries, and component patterns.
 - Read `claude.md` in geniro-web/ before implementing — it contains the full project context.
 - Follow the dominant pattern in the repo when standards are unclear — search for similar components and mirror their structure.
 - Prefer clear, explicit, maintainable implementations. Implement the simplest solution that meets the requirements and fits the repo patterns.
+- **Reuse existing components** — before creating anything new, search the codebase for existing components, hooks, and utilities that already solve the problem. Extend or compose them rather than building from scratch.
+- **Use framework features first** — Refine, Ant Design, and React Router already provide solutions for data fetching, forms, tables, modals, routing, auth, notifications, and more. Never build custom implementations when the framework offers a built-in way. Check Ant Design's component library and Refine's hooks before writing custom UI or data logic.
+- **No custom reinventions** — don't create custom dropdowns, modals, tables, date pickers, loaders, or layout wrappers when Ant Design provides them. Don't write custom data fetching when Refine hooks handle it. Don't build custom routing when React Router covers it.
 
 ### Two-Layer Architecture
 
@@ -85,6 +88,22 @@ src/
    - Clean up subscription on unmount
 7. **Naming:** PascalCase for components/types, camelCase for variables/functions/hooks. Use precise domain terminology — avoid `data`, `item`, `tmp`, `result`.
 
+### Visual Quality (MUST follow)
+
+Every UI you build or modify must look polished and professional — not just functional. Follow these rules:
+
+- **Consistent spacing** — use Ant Design's spacing tokens and the project's existing margin/padding patterns. No arbitrary pixel values. Look at neighboring components and match their spacing.
+- **Proper alignment** — elements within a row should be vertically centered. Form labels should align. Columns in layouts should have consistent widths.
+- **Typography hierarchy** — use Ant Design's `Typography` components (`Title`, `Text`, `Paragraph`) with appropriate levels. Don't use raw `<h1>`–`<h6>` or unstyled `<span>`. Headings, body text, and secondary text should have clear visual distinction.
+- **Color consistency** — use Ant Design theme tokens for colors (primary, success, warning, error, text, background). Never hardcode hex values unless the project already does for a specific case.
+- **Empty states** — every list, table, or content area must have a designed empty state (use Ant Design's `Empty` component). Never show a blank white area when there's no data.
+- **Loading states** — use `Spin`, `Skeleton`, or the project's existing loading patterns. Users should never see a frozen UI while data loads.
+- **Responsive behavior** — components should not overflow or break at reasonable viewport sizes. Use Ant Design's `Row`/`Col` grid or flex layouts.
+- **Micro-interactions** — buttons should have hover/active states (Ant Design handles this by default), form inputs should show focus states, transitions should be smooth.
+- **Match existing design** — before building new UI, screenshot or study the existing pages in the app. Your new components should feel like they belong in the same app — same card styles, same button sizes, same table formatting, same sidebar patterns.
+
+If something looks "off" during Playwright visual verification — awkward spacing, misaligned elements, inconsistent styling — fix it before reporting the task as done.
+
 ### Quality Checklist
 
 When writing or editing code, actively check for and avoid these patterns:
@@ -99,6 +118,7 @@ When writing or editing code, actively check for and avoid these patterns:
 - **Loose types in core** — `any`, `unknown`, `Record<string, any>` flowing into component props or state
 - **Double-casting / type escape hatches** — `as unknown as T` to silence type errors instead of fixing types
 - **Dependency creep** — adding new libraries when existing ones (Ant Design, lodash, date-fns) already cover the need
+- **Custom reinventions** — building custom components (tables, modals, selects, loaders, layouts) instead of using Ant Design or Refine equivalents; writing custom data fetching instead of Refine hooks; creating custom routing instead of React Router
 - **Magic numbers/strings** — use named constants for breakpoints, timeouts, config values
 - **Dead code / half-refactored structures** — leftover unused components, imports, or mixed old/new patterns
 - **Unnecessary comments** — remove comments that restate obvious JSX; keep comments that explain *why*
