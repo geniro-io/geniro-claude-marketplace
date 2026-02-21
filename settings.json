@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*pnpm run full-check*)",
+      "Bash(*pnpm build*)",
+      "Bash(*pnpm test:unit*)",
+      "Bash(*pnpm test:integration*)",
+      "Bash(*pnpm test:e2e:local*)",
+      "Bash(*pnpm lint:fix*)",
+      "Bash(*pnpm build:tests*)",
+      "Bash(*pnpm generate:api*)",
+      "Bash(*pnpm -w run full-check*)",
+      "Bash(*pnpm -w build*)",
+      "Bash(*pnpm -w test:unit*)",
+      "Bash(ls *)",
+      "Bash(git diff *)",
+      "Bash(git status*)",
+      "Bash(git log *)",
+      "Bash(cat geniro-claude-plugin/knowledge/*)",
+      "Bash(grep * geniro-claude-plugin/knowledge/*)"
+    ]
+  }
+}
