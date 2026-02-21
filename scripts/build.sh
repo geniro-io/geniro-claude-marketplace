@@ -25,10 +25,8 @@ mkdir -p "$DIST_DIR"
 
 OUTPUT_FILE="$DIST_DIR/${NAME}-${VERSION}.zip"
 
-# Remove old versioned builds (keep latest.zip for overwrite)
+# Remove old builds
 rm -f "$DIST_DIR/${NAME}-"*.zip
-
-LATEST_FILE="$DIST_DIR/${NAME}-latest.zip"
 
 # Package as zip archive
 # The archive contains the plugin contents at the root level
@@ -39,13 +37,8 @@ zip -r "$OUTPUT_FILE" . \
   -x "__pycache__/*" \
   -x "node_modules/*"
 
-# Also create/overwrite a latest.zip (same path every time for easy UI re-upload)
-cp "$OUTPUT_FILE" "$LATEST_FILE"
-
 echo ""
 echo "✓ Built: $OUTPUT_FILE"
-echo "✓ Latest: $LATEST_FILE"
 echo "  Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
 echo ""
 echo "Upload via Claude Desktop → Plugins → Upload local plugin"
-echo "  Use '${NAME}-latest.zip' for quick updates (same path every time)"
