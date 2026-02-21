@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Release script — bumps version, builds .zip file, commits, and pushes
+# Release script — bumps version, builds .zip file, commits, tags, and pushes
 # Usage: ./scripts/release.sh [patch|minor|major] "commit message"
 # Example: ./scripts/release.sh minor "feat: add Playwright visual verification"
 
@@ -32,8 +32,8 @@ echo "--- Step 2: Build .zip file ---"
 "$REPO_ROOT/scripts/build.sh"
 echo ""
 
-# Step 3: Commit and push
-echo "--- Step 3: Commit and push ---"
+# Step 3: Commit, tag, and push
+echo "--- Step 3: Commit, tag, and push ---"
 
 # Read the new version for the commit message
 PLUGIN_JSON="$REPO_ROOT/plugins/geniro-claude-plugin/.claude-plugin/plugin.json"
@@ -42,11 +42,13 @@ NEW_VERSION=$(python3 -c "import json; print(json.load(open('$PLUGIN_JSON'))['ve
 cd "$REPO_ROOT"
 git add -A
 git commit -m "$COMMIT_MSG (v$NEW_VERSION)"
-git push origin main
+git tag -a "v$NEW_VERSION" -m "$COMMIT_MSG"
+git push origin main --tags
 
 echo ""
 echo "=== Released v$NEW_VERSION ==="
 echo "  Commit: $COMMIT_MSG (v$NEW_VERSION)"
+echo "  Tag: v$NEW_VERSION"
 echo "  Plugin: dist/geniro-claude-plugin-$NEW_VERSION.zip"
 echo ""
 echo "Upload the .zip file via Claude Desktop → Plugins → Upload local plugin"
