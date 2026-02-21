@@ -46,11 +46,12 @@ with open('$PLUGIN_JSON', 'w') as f:
     f.write('\n')
 "
 
-# Update marketplace.json
+# Update marketplace.json (both metadata.version and plugin entry version)
 python3 -c "
 import json
 with open('$MARKETPLACE_JSON', 'r') as f:
     data = json.load(f)
+data['metadata']['version'] = '$NEW_VERSION'
 data['plugins'][0]['version'] = '$NEW_VERSION'
 with open('$MARKETPLACE_JSON', 'w') as f:
     json.dump(data, f, indent=2)
@@ -58,7 +59,7 @@ with open('$MARKETPLACE_JSON', 'w') as f:
 "
 
 echo "✓ Updated plugin.json → $NEW_VERSION"
-echo "✓ Updated marketplace.json → $NEW_VERSION"
+echo "✓ Updated marketplace.json (metadata + plugin entry) → $NEW_VERSION"
 echo ""
 echo "Ready to commit:"
 echo "  git add -A && git commit -m \"chore: bump version to $NEW_VERSION\" && git push origin main"
