@@ -30,29 +30,6 @@ Full release pipeline: bumps version → builds .zip → commits → pushes.
 # Bumps version, builds .zip, commits, pushes to origin/main
 ```
 
-## After Every Change (MANDATORY)
-
-When you finish making changes to the plugin, **always run the release script**:
-
-```bash
-./scripts/release.sh [patch|minor|major] "description of changes"
-```
-
-**Version bump rules** (semantic versioning):
-- **patch** — bug fixes, typo corrections, wording improvements, minor clarifications
-- **minor** — new features, new agents/skills, significant behavior changes, new workflow phases, new sections in agent instructions
-- **major** — breaking changes to plugin structure, renamed agents/skills, removed functionality
-
-If the user cannot push from the current environment, run bump + build and suggest the commit command:
-
-```
-I've updated the plugin to version X.Y.Z and built the .zip file.
-Ready to commit and push from your machine:
-  git add -A && git commit -m "feat/fix/refactor: <description> (vX.Y.Z)" && git push origin main
-```
-
-Never leave uncommitted version bumps — the bump and the changes must go in the same commit.
-
 ## Plugin Structure
 
 ```
