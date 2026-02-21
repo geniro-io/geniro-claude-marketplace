@@ -1,0 +1,1 @@
+# geniro-claude-plugin
