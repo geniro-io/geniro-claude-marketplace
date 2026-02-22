@@ -40,7 +40,7 @@ geniro-claude-marketplace/
 │   ├── bump-version.sh                # Bump version in marketplace.json
 │   └── release.sh                     # Full release pipeline
 ├── dist/                              # Build output (gitignored)
-└── plugins/geniro-claude-marketplace/      # The actual plugin
+└── plugins/geniro-claude-plugin/      # The actual plugin
     ├── .claude-plugin/plugin.json     # Plugin manifest
     ├── CLAUDE.md                      # This file
     ├── agents/                        # Agent definitions (.md)
@@ -57,4 +57,4 @@ geniro-claude-marketplace/
 - **Architect** (opus) — explores codebases, produces specs, implements minor improvements directly.
 - **API/Web agents** (opus) — implement code following the architect's spec.
 - **Reviewer** (opus) — reviews code, loops with implementing agents until approved.
-- **Knowledge base** — files in `knowledge/` persist across sessions. Paths in skills reference `geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/` (relative to the project root CWD).
+- **Knowledge base** — files in `knowledge/` persist across sessions. Paths in skills reference `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/` (relative to the project root CWD).

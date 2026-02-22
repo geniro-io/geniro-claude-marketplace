@@ -54,23 +54,23 @@ $ARGUMENTS
 
 ### Phase 0: Load Knowledge Base
 
-**Knowledge base path**: `geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/`
+**Knowledge base path**: `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/`
 
 **Before anything else**, check whether the knowledge base has real entries:
 
 ```bash
 # Check if any knowledge file has actual entries (lines starting with ### [)
 # Use find to avoid zsh glob expansion errors when no files exist
-find geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge -name "*.md" -exec grep -l "^### \[" {} + 2>/dev/null
+find geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge -name "*.md" -exec grep -l "^### \[" {} + 2>/dev/null
 ```
 
 **If entries exist**, read the files that have content:
 
 ```bash
-cat geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/api-learnings.md
-cat geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/web-learnings.md
-cat geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/architecture-decisions.md
-cat geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/review-feedback.md
+cat geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/api-learnings.md
+cat geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/web-learnings.md
+cat geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/architecture-decisions.md
+cat geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/review-feedback.md
 ```
 
 Scan each file and extract anything relevant to the current task:
@@ -368,10 +368,10 @@ Review the entire task execution — architect spec, engineer reports, reviewer 
 
 **For each learning**, append it to the appropriate knowledge file using the Edit tool:
 
-- API-specific → `geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/api-learnings.md`
-- Web-specific → `geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/web-learnings.md`
-- Architecture decisions → `geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/architecture-decisions.md`
-- Reviewer patterns → `geniro-claude-marketplace/plugins/geniro-claude-marketplace/knowledge/review-feedback.md`
+- API-specific → `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/api-learnings.md`
+- Web-specific → `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/web-learnings.md`
+- Architecture decisions → `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/architecture-decisions.md`
+- Reviewer patterns → `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/review-feedback.md`
 
 **Entry format** (use today's date):
 ```markdown
