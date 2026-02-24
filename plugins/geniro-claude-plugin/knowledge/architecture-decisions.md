@@ -66,6 +66,13 @@ Record of significant architecture decisions made during development. Each entry
 - **Rationale**: Simplest fix preserving existing architecture. Enrichment handlers can read committed data. Transaction failures don't affect notifications. Polling fallback handles the crash-between-commit-and-emit edge case.
 - **Consequences**: Notification data must be captured inside and passed out of transactions. Methods called from both standalone and nested contexts need dual behavior.
 
+### [2026-02-24] Decision: Auth context passed as parameter, not injected into services
+- **Task**: Fix notification handlers broken by NestJS scope bubbling
+- **Context**: `AuthContextService` is `@Injectable({ scope: Scope.REQUEST })` because it needs `FastifyRequest`. Any service injecting it becomes REQUEST-scoped, breaking module-level `onModuleInit()` and preventing use in non-HTTP contexts (notification handlers, queue workers).
+- **Decision**: Controllers use `@CtxStorage() contextDataStorage: AuthContextStorage` decorator and pass auth context as parameter to services. Services NEVER inject `AuthContextService` directly. For notification handlers needing REQUEST-scoped services, use `ModuleRef.create()` for lazy resolution.
+- **Established pattern**: 5 controllers already use `@CtxStorage()` (GraphsController, GraphRevisionsController, KnowledgeController, GitRepositoriesController, GitHubAppController). ThreadsController is the last holdout.
+- **Consequences**: Services stay singleton-scoped. No scope bubbling. Services are testable without mocking request context. Notification handlers can consume services directly (if singleton) or via `ModuleRef.create()` (if still scoped).
+
 ### [2026-02-21] Decision: System settings endpoint for feature flags
 - **Task**: Conditionally show/hide GitHub App UI based on server configuration
 - **Context**: Frontend needs to know if GitHub App env vars are set without exposing raw config

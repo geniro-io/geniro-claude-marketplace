@@ -107,10 +107,23 @@ Accumulated knowledge about the Geniro API codebase (`geniro/`). Updated automat
 - **Detail**: Many `forwardRef(() => SomeModule)` imports exist from earlier code but are no longer needed. Check if Module A actually DI-injects providers from Module B at the NestJS level (not just TypeScript type imports). If only types/static methods/`new` are used, the module import is unnecessary. `ModuleRef.resolve(X, ..., { strict: false })` works globally without needing the provider's module imported.
 - **Applies to**: Any module cleanup or circular dependency investigation
 
-### [2026-02-22] Pattern: Replace ModuleRef.create() with constructor injection for singletons
-- **Context**: Notification handlers used `moduleRef.create(ThreadsService)` to get a service instance per call
-- **Detail**: `ModuleRef.create()` instantiates a new instance each invocation — wasteful for singletons. If the service has no request-scoped dependencies in its constructor chain, use direct constructor injection instead. The module already imports the provider's module, so DI works.
-- **Applies to**: Any handler or service using `moduleRef.create()` or `moduleRef.resolve()` for singleton-scoped providers
+### [2026-02-24] Pattern: `@CtxStorage()` + `AuthContextStorage` is the standard auth pattern
+- **Context**: Controllers must use `@CtxStorage() contextDataStorage: AuthContextStorage` param decorator to get the current user, then pass it to services. Services call `ctx.checkSub()` to extract userId.
+- **Detail**: `AuthContextStorage` is a simple wrapper with `checkSub(): string`, `sub: string | undefined`, `isAuthorized: boolean`. Defined in `packages/http-server/src/auth/auth-context-storage.ts`. Decorator defined in `packages/http-server/src/auth/decorators/context-data.decorator.ts`.
+- **Controllers using it**: GraphsController, GraphRevisionsController, KnowledgeController, GitRepositoriesController, GitHubAppController. ThreadsController is a known exception (uses injected AuthContextService — causes REQUEST scope issues).
+- **Applies to**: Every controller endpoint that needs auth. Never inject `AuthContextService` directly into services — it's REQUEST-scoped and causes scope bubbling.
+
+### [2026-02-24] Gotcha: Injecting AuthContextService into services causes NestJS scope bubbling
+- **What happened**: ThreadsService injected `AuthContextService` (REQUEST-scoped) → became REQUEST-scoped itself → notification handlers that depended on ThreadsService became REQUEST-scoped → module's `onModuleInit()` stopped firing
+- **Root cause**: NestJS propagates scope — if ANY dependency (direct or transitive) is `Scope.REQUEST`, the consumer becomes REQUEST-scoped too. This silently breaks `onModuleInit()` on module classes.
+- **Fix**: Use `ModuleRef.create(ThreadsService)` in notification handlers to lazily resolve the scoped service. Long-term fix: refactor ThreadsService to accept `userId`/`AuthContextStorage` as method parameters instead of injecting `AuthContextService`.
+- **Prevention**: Never inject `AuthContextService` into services. Pass auth context from controller → service as a parameter. If a service MUST be used outside HTTP context (e.g., notification handlers), it must be singleton-scoped.
+
+### [2026-02-24] Gotcha: DO NOT remove ModuleRef.create() from notification handlers
+- **What happened**: Commit `f8fe67e` ("remove ModuleRef and forwardRef") replaced `moduleRef.create(ThreadsService)` with direct `ThreadsService` injection in notification handlers. This caused scope bubbling and broke `onModuleInit()`.
+- **Root cause**: `ThreadsService` → `AuthContextService` (REQUEST) → handlers became REQUEST-scoped → module `onModuleInit()` never fired → no notification handlers were registered → no WebSocket notifications delivered
+- **Fix**: Restored `ModuleRef.create(ThreadsService)` pattern in `AgentInvokeNotificationHandler`, `ThreadLifecycleNotificationHandler`, `ThreadUpdateNotificationHandler`
+- **Applies to**: Any notification handler that needs a service with REQUEST-scoped transitive dependencies. `ModuleRef.create()` is the correct pattern here — it avoids scope bubbling.
 
 ### [2026-02-22] Gotcha: Unused constructor injections accumulate silently
 - **Context**: Found 7 unused `private readonly` injections across the codebase during refactoring audit
