@@ -55,17 +55,18 @@ geniro-claude-marketplace/
     │   └── cleanup-agent.md           # Post-pipeline garbage cleanup
     ├── skills/                        # Skill definitions (SKILL.md)
     │   ├── orchestrate/               # Full pipeline command
+    │   ├── new-feature/               # Feature spec creation via interview
+    │   ├── features/                  # Feature backlog management
     │   ├── plan/                      # Architect-only command
     │   ├── api-task/                  # Direct API task command
     │   ├── web-task/                  # Direct Web task command
     │   ├── review/                    # Direct review command
     │   ├── learn/                     # Knowledge base management
-    │   ├── spec/                      # Requirements interview
+    │   ├── spec/                      # Requirements interview (ad-hoc)
     │   ├── skeptic/                   # Standalone spec validation
     │   ├── security-audit/            # Standalone security audit
     │   └── validate-knowledge/        # Knowledge base health check
     ├── hooks/hooks.json               # Hook configurations
-    ├── knowledge/                     # Persistent knowledge base
     ├── settings.json                  # Permission settings
     └── README.md                      # Documentation
 ```
@@ -81,4 +82,9 @@ geniro-claude-marketplace/
 - **Completeness Validator** (opus) — requirements traceability check during Phase 1b, runs alongside skeptic.
 - **Test Reviewer** (opus) — test quality evaluation during Phase 4, runs alongside reviewer.
 - **Cleanup Agent** (haiku) — runs at the end of Phase 6, detects and removes leftover screenshots, temp files, and stops lingering servers.
-- **Knowledge base** — files in `knowledge/` persist across sessions. Paths in skills reference `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/` (relative to the project root CWD).
+- **Feature backlog** — feature specs live in `.claude/project-features/` (created on first use). Completed features are archived to `.claude/project-features/completed/`. Create with `/new-feature`, manage with `/features`, implement with `/orchestrate feature: <name>`.
+- **Knowledge base** — project-specific knowledge persists across sessions in `.claude/project-knowledge/` directories:
+  - API learnings → `geniro/.claude/project-knowledge/api-learnings.md`
+  - Web learnings → `geniro-web/.claude/project-knowledge/web-learnings.md`
+  - Architecture decisions → `.claude/project-knowledge/architecture-decisions.md`
+  - Review feedback → `.claude/project-knowledge/review-feedback.md`

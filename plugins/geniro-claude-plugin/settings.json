@@ -16,8 +16,13 @@
       "Bash(git diff *)",
       "Bash(git status*)",
       "Bash(git log *)",
-      "Bash(cat geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/*)",
-      "Bash(grep * geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/*)",
+      "Bash(cat */.claude/project-knowledge/*)",
+      "Bash(cat .claude/project-knowledge/*)",
+      "Bash(grep * */.claude/project-knowledge/*)",
+      "Bash(grep * .claude/project-knowledge/*)",
+      "Bash(mkdir -p .claude/project-features*)",
+      "Bash(mv .claude/project-features/*)",
+      "Bash(ls .claude/project-features*)",
       "Bash(*pnpm audit*)"
     ]
   }

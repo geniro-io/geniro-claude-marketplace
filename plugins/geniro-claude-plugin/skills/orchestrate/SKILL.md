@@ -52,25 +52,50 @@ $ARGUMENTS
 
 ## Workflow
 
-### Phase 0: Load Knowledge Base
+### Phase 0: Load Feature Spec & Knowledge Base
 
-**Knowledge base path**: `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/`
+**Step 1: Check if this is a feature from the backlog.**
 
-**Before anything else**, check whether the knowledge base has real entries:
+If `$ARGUMENTS` starts with `feature:` or `feature ` followed by a name (e.g., `feature: my-feature-name`), OR if `$ARGUMENTS` is `next`:
+
+```bash
+# If "next" — find the next approved feature
+ls .claude/project-features/*.md 2>/dev/null | head -20
+
+# If specific feature name — find its spec
+ls .claude/project-features/<name>.md 2>/dev/null
+```
+
+**If a feature spec is found:**
+1. Read the full spec from `.claude/project-features/<name>.md`
+2. Update the YAML frontmatter: set `status: in-progress` and `updated: <today's date>` using the Edit tool
+3. Use the spec content as the feature request for the rest of the pipeline (replaces `$ARGUMENTS`)
+4. **Remember the feature file path** — you'll need it in Phase 6 to archive the feature on completion
+
+**If `$ARGUMENTS` is `next`:**
+1. Read all `.md` files in `.claude/project-features/` (not `completed/`)
+2. Filter for `status: approved`
+3. Pick the oldest one (by `created` date)
+4. If none found, tell the user: "No approved features in the backlog. Create one with `/new-feature` or pass a description directly."
+
+**If no feature spec is found** (regular description), proceed normally with `$ARGUMENTS` as the feature description.
+
+**Step 2: Load the knowledge base.**
+
+Knowledge is stored in project-specific directories:
 
 ```bash
 # Check if any knowledge file has actual entries (lines starting with ### [)
-# Use find to avoid zsh glob expansion errors when no files exist
-find geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge -name "*.md" -exec grep -l "^### \[" {} + 2>/dev/null
+grep -rl "^### \[" geniro/.claude/project-knowledge/ geniro-web/.claude/project-knowledge/ .claude/project-knowledge/ 2>/dev/null
 ```
 
 **If entries exist**, read the files that have content:
 
 ```bash
-cat geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/api-learnings.md
-cat geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/web-learnings.md
-cat geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/architecture-decisions.md
-cat geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/review-feedback.md
+cat geniro/.claude/project-knowledge/api-learnings.md 2>/dev/null
+cat geniro-web/.claude/project-knowledge/web-learnings.md 2>/dev/null
+cat .claude/project-knowledge/architecture-decisions.md 2>/dev/null
+cat .claude/project-knowledge/review-feedback.md 2>/dev/null
 ```
 
 Scan each file and extract anything relevant to the current task:
@@ -503,20 +528,31 @@ After the reviewer approves, **present the results to the user** and ask if they
 
 **This is the main feedback loop.** The user may go through several rounds of "change X, tweak Y" before being satisfied. Be patient — route each request to the right agent and loop back.
 
-### Phase 6: Summary & Cleanup
+### Phase 6: Summary, Cleanup & Archive
 
 After the user confirms they're satisfied:
 
-1. **Verify both repos build** one final time:
+1. **Archive the feature spec** (if this task came from the backlog):
+   If you loaded a feature spec from `.claude/project-features/` in Phase 0, archive it now:
+   ```bash
+   mkdir -p .claude/project-features/completed
+   ```
+   Update the spec's YAML frontmatter: set `status: completed` and `updated: <today's date>` using the Edit tool. Then move it:
+   ```bash
+   mv .claude/project-features/<feature-name>.md .claude/project-features/completed/<feature-name>.md
+   ```
+   If this was NOT from the backlog (ad-hoc description), skip this step.
+
+2. **Verify both repos build** one final time:
    ```bash
    cd geniro && pnpm run full-check
    cd geniro-web && pnpm run full-check
    ```
-2. **Re-run related integration tests** one final time (delegate to `api-agent` if any Phase 5 changes were made to API code):
+3. **Re-run related integration tests** one final time (delegate to `api-agent` if any Phase 5 changes were made to API code):
    ```bash
    cd geniro && pnpm test:integration src/__tests__/integration/<feature>/<test>.int.ts
    ```
-3. **Delegate to `cleanup-agent`** — run the automated cleanup sweep to find and remove leftover artifacts:
+4. **Delegate to `cleanup-agent`** — run the automated cleanup sweep to find and remove leftover artifacts:
    ```
    Run a full cleanup sweep of the workspace after task completion.
 
@@ -531,7 +567,7 @@ After the user confirms they're satisfied:
    Detect and clean: Playwright screenshots, temp files, debug logs, running servers on ports 5000/5174, orphaned background processes, leftover test entities ([TEST] prefixed graphs/threads created by claude-test user). Produce a cleanup report.
    ```
    The cleanup agent will automatically delete garbage files, stop lingering servers, and attempt to remove test entities. If it reports "NEEDS ATTENTION", review the flagged items and decide whether to act on them.
-4. **Provide a final report** with:
+5. **Provide a final report** with:
    - Files modified per repo
    - Key decisions made (from architect's rationale)
    - Review verdict and any user-requested adjustments
@@ -553,12 +589,18 @@ Review the entire task execution — architect spec, engineer reports, reviewer 
 6. **Mirage patterns** — if the skeptic found mirages that required spec revision, record what the architect got wrong and why (e.g., function renamed in recent refactor, file moved) so future specs avoid the same mistake
 7. **Useful commands** — non-obvious CLI commands or workflows that helped
 
-**For each learning**, append it to the appropriate knowledge file using the Edit tool:
+**For each learning**, append it to the appropriate knowledge file using the Edit tool.
 
-- API-specific → `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/api-learnings.md`
-- Web-specific → `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/web-learnings.md`
-- Architecture decisions → `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/architecture-decisions.md`
-- Reviewer patterns → `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/review-feedback.md`
+Create the knowledge directory if it doesn't exist:
+```bash
+mkdir -p geniro/.claude/project-knowledge geniro-web/.claude/project-knowledge .claude/project-knowledge
+```
+
+Knowledge file locations:
+- API-specific → `geniro/.claude/project-knowledge/api-learnings.md`
+- Web-specific → `geniro-web/.claude/project-knowledge/web-learnings.md`
+- Architecture decisions → `.claude/project-knowledge/architecture-decisions.md`
+- Reviewer patterns → `.claude/project-knowledge/review-feedback.md`
 
 **Entry format** (use today's date):
 ```markdown

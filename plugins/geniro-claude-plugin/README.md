@@ -9,7 +9,7 @@ Multi-agent orchestrator plugin for the Geniro platform. Provides a full develop
 │                         /orchestrate                                 │
 │                     (Pipeline Controller)                            │
 │                                                                     │
-│  0. Load knowledge base (past learnings)                            │
+│  0. Load feature spec (if from backlog) + knowledge base            │
 │  1. Architect analyzes & designs spec with execution waves          │
 │  1b. Skeptic + Completeness Validator verify spec (parallel)        │
 │  2. User reviews & approves the plan                                │
@@ -29,11 +29,13 @@ Multi-agent orchestrator plugin for the Geniro platform. Provides a full develop
 └─────┘└─────┘└─────┘└─────┘└─────┘└─────┘└─────┘└───────┘└───────┘
                   │
             ┌─────▼─────┐
-            │ knowledge/ │  Persistent learnings
-            │            │  fed back into every
-            │ Patterns   │  future task
-            │ Gotchas    │
-            │ Decisions  │
+            │ .claude/   │  Persistent learnings
+            │ project-   │  fed back into every
+            │ knowledge/ │  future task
+            │            │
+            │ Patterns   │  Feature backlog in
+            │ Gotchas    │  .claude/project-
+            │ Decisions  │  features/
             │ Feedback   │
             └────────────┘
 ```
@@ -48,14 +50,23 @@ claude plugin add ./geniro-claude-marketplace
 
 ## Available Commands
 
-### `/geniro-claude-plugin:orchestrate [feature description]`
+### `/geniro-claude-plugin:orchestrate [feature description | feature: <name> | next]`
 
-The main entry point. Runs the full pipeline: load knowledge → architect → validate spec → user approval → implement → review (3 agents) → integration tests → deliver → save learnings.
+The main entry point. Runs the full pipeline: load knowledge → architect → validate spec → user approval → implement → review (3 agents) → integration tests → deliver → archive feature → save learnings.
 
-**Example:**
+**Examples:**
 ```
+# Ad-hoc feature description
 /geniro-claude-plugin:orchestrate Add a GraphRevisionProgress WebSocket event that shows per-node rebuild progress during live updates
+
+# Implement a feature from the backlog (created with /new-feature)
+/geniro-claude-plugin:orchestrate feature: graph-revision-progress
+
+# Implement the next approved feature from the backlog
+/geniro-claude-plugin:orchestrate next
 ```
+
+When implementing from the backlog, the spec is loaded from `.claude/project-features/` and archived to `.claude/project-features/completed/` on success.
 
 ### `/geniro-claude-plugin:plan [task description]`
 
@@ -66,13 +77,39 @@ Run just the architect to produce an implementation-ready specification without 
 /geniro-claude-plugin:plan Add per-graph concurrency with locks to the revision queue
 ```
 
-### `/geniro-claude-plugin:spec [feature description]`
+### `/geniro-claude-plugin:new-feature [feature description]`
 
-Conduct a structured requirements interview before architecture. Three rounds: general understanding → code-informed questions → edge cases. Produces a clear requirements spec.
+Create a new feature or task spec via structured interview. Interviews you about the feature, explores the codebase, and saves a complete spec to `.claude/project-features/`. Use when you want to plan a feature before implementing it.
 
 **Example:**
 ```
-/geniro-claude-plugin:spec Add a graph template marketplace where users can share and import graph configurations
+/geniro-claude-plugin:new-feature Add a graph template marketplace where users can share and import graph configurations
+```
+
+After the interview, implement with:
+```
+/geniro-claude-plugin:orchestrate feature: graph-template-marketplace
+```
+
+### `/geniro-claude-plugin:features [list|next|complete|status|show]`
+
+Manage the feature backlog. List all features, check what's next, mark features as complete.
+
+**Examples:**
+```
+/geniro-claude-plugin:features list
+/geniro-claude-plugin:features next
+/geniro-claude-plugin:features complete graph-template-marketplace
+/geniro-claude-plugin:features show thread-auto-naming
+```
+
+### `/geniro-claude-plugin:spec [feature description]`
+
+Conduct a structured requirements interview (ad-hoc, does not save to backlog). Three rounds: general understanding → code-informed questions → edge cases. For saved specs, use `/new-feature` instead.
+
+**Example:**
+```
+/geniro-claude-plugin:spec Quick question about how graph execution handles concurrent triggers
 ```
 
 ### `/geniro-claude-plugin:api-task [task description]`
@@ -161,10 +198,60 @@ Run a dedicated knowledge base health check: detect stale references, duplicates
 | Cleanup Agent | Haiku | Fast garbage detection and removal — simple file/process checks |
 | Learn Manager | Sonnet | Knowledge CRUD — straightforward operations |
 | Knowledge Validator | Sonnet | File existence checks — straightforward operations |
+| Feature Interview | Opus | Deep requirements gathering and codebase exploration |
+| Feature Manager | Haiku | Simple file listing and status management |
+
+## Feature Backlog System
+
+The plugin supports a **spec-first workflow**: create feature specs via structured interview, then implement them from the backlog.
+
+### Workflow
+
+1. **Create a feature spec**: `/new-feature Add user authentication with OAuth`
+   - Agent interviews you (3 rounds: understanding → code-informed → edge cases)
+   - Saves spec to `.claude/project-features/<kebab-name>.md`
+
+2. **Manage the backlog**: `/features list` to see all features and their status
+
+3. **Implement from backlog**: `/orchestrate feature: <name>` or `/orchestrate next`
+   - Loads the spec, sets status to `in-progress`
+   - Runs the full pipeline (architect → implement → review → test)
+   - On completion, archives to `.claude/project-features/completed/`
+
+### Feature Spec Format
+
+Each feature is a Markdown file with YAML frontmatter:
+- `name`: kebab-case identifier
+- `status`: `draft` → `approved` → `in-progress` → `completed`
+- `size`: S, M, or L
+- `type`: feature, bugfix, refactor, or task
+- `created` / `updated`: timestamps
+
+### File Structure
+
+```
+.claude/
+├── project-features/           # Feature backlog
+│   ├── graph-template-market.md    # Approved, ready to implement
+│   ├── thread-auto-naming.md       # In progress
+│   └── completed/                  # Archived completed features
+│       └── runtime-health-check.md
+└── project-knowledge/          # Cross-cutting knowledge
+    ├── architecture-decisions.md
+    └── review-feedback.md
+
+geniro/.claude/
+└── project-knowledge/
+    └── api-learnings.md        # API-specific knowledge
+
+geniro-web/.claude/
+└── project-knowledge/
+    └── web-learnings.md        # Web-specific knowledge
+```
 
 ## Self-Improvement System
 
-The plugin maintains a persistent knowledge base in `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/` that grows with every task.
+The plugin maintains a persistent knowledge base in project-specific `.claude/project-knowledge/` directories that grows with every task.
 
 ### How It Works
 
@@ -187,12 +274,12 @@ The plugin maintains a persistent knowledge base in `geniro-claude-marketplace/p
 
 ### Knowledge Files
 
-| File | Contents |
-|------|----------|
-| `api-learnings.md` | API patterns, gotchas, test patterns, commands |
-| `web-learnings.md` | Web patterns, gotchas, component patterns, commands |
-| `architecture-decisions.md` | Design choices with rationale and consequences |
-| `review-feedback.md` | Recurring reviewer findings, security patterns, quality trends |
+| File | Location | Contents |
+|------|----------|----------|
+| `api-learnings.md` | `geniro/.claude/project-knowledge/` | API patterns, gotchas, test patterns, commands |
+| `web-learnings.md` | `geniro-web/.claude/project-knowledge/` | Web patterns, gotchas, component patterns, commands |
+| `architecture-decisions.md` | `.claude/project-knowledge/` | Design choices with rationale and consequences |
+| `review-feedback.md` | `.claude/project-knowledge/` | Recurring reviewer findings, security patterns, quality trends |
 
 ## Agents
 
@@ -215,7 +302,8 @@ You describe a feature
         │
         ▼
 ┌─────────────────┐
-│  0. KNOWLEDGE    │  Load accumulated learnings. Pass relevant
+│  0. FEATURE &    │  Load feature spec from backlog (if applicable).
+│     KNOWLEDGE    │  Load accumulated learnings. Pass relevant
 │                  │  context to all downstream agents.
 └────────┬────────┘
          ▼
@@ -263,9 +351,9 @@ You describe a feature
 └────────┬────────┘
          ▼
 ┌─────────────────┐
-│  6. SUMMARY &    │  Final build verification, cleanup-agent sweep
-│     CLEANUP      │  (screenshots, temp files, servers), summary
-│                  │  report with files, decisions, manual steps.
+│  6. SUMMARY &    │  Archive feature to completed/ (if from backlog).
+│     CLEANUP      │  Final build verification, cleanup-agent sweep,
+│                  │  summary report with files, decisions, steps.
 └────────┬────────┘
          ▼
 ┌─────────────────┐
@@ -293,18 +381,17 @@ geniro-claude-marketplace/
 │   └── cleanup-agent.md        # Cleanup: post-pipeline garbage sweep
 ├── hooks/
 │   └── hooks.json               # Lifecycle hooks
-├── knowledge/                   # Persistent self-improvement knowledge base
-│   ├── api-learnings.md         # API patterns, gotchas, commands
-│   ├── web-learnings.md         # Web patterns, gotchas, components
-│   ├── architecture-decisions.md # Design choices with rationale
-│   └── review-feedback.md       # Recurring reviewer findings
 ├── skills/
 │   ├── orchestrate/
-│   │   └── SKILL.md             # Full pipeline command
+│   │   └── SKILL.md             # Full pipeline command (supports feature backlog)
+│   ├── new-feature/
+│   │   └── SKILL.md             # Feature spec creation via interview
+│   ├── features/
+│   │   └── SKILL.md             # Feature backlog management (list/next/complete)
 │   ├── plan/
 │   │   └── SKILL.md             # Architect-only command
 │   ├── spec/
-│   │   └── SKILL.md             # Requirements interview
+│   │   └── SKILL.md             # Requirements interview (ad-hoc)
 │   ├── api-task/
 │   │   └── SKILL.md             # Direct API task command
 │   ├── web-task/

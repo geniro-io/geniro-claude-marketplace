@@ -13,7 +13,11 @@ argument-hint: "[fix|report] — 'report' for dry-run (default), 'fix' to auto-r
 
 # Knowledge Base Validator
 
-Validate the Geniro knowledge base at `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/`.
+Validate the Geniro knowledge base across project-specific directories:
+- `geniro/.claude/project-knowledge/api-learnings.md`
+- `geniro-web/.claude/project-knowledge/web-learnings.md`
+- `.claude/project-knowledge/architecture-decisions.md`
+- `.claude/project-knowledge/review-feedback.md`
 
 ## Mode
 
