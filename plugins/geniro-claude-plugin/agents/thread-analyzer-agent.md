@@ -252,6 +252,89 @@ Sort issues by severity (critical first).
 
 ---
 
+## Test Graph Creation
+
+When your analysis reveals issues that need testing or reproducing, you can generate a ready-to-import graph JSON. The Geniro UI has an **Import** button on the graphs list page that accepts `.json` files.
+
+### Import JSON Format
+
+The UI accepts two formats. Use the **wrapped format** (preferred) since it includes node positions:
+
+```json
+{
+  "graph": {
+    "name": "Test: [describe what this graph tests]",
+    "description": "Created for testing — [brief purpose]",
+    "schema": {
+      "nodes": [
+        {
+          "id": "trigger-1",
+          "template": "manual-trigger",
+          "config": {}
+        },
+        {
+          "id": "agent-1",
+          "template": "simple-agent",
+          "config": {
+            "name": "Agent Name",
+            "description": "What this agent does",
+            "instructions": "System prompt for the agent",
+            "invokeModelName": "claude-sonnet-4.6",
+            "maxIterations": 50,
+            "summarizeMaxTokens": 272000,
+            "summarizeKeepTokens": 30000
+          }
+        }
+      ],
+      "edges": [
+        { "from": "trigger-1", "to": "agent-1" }
+      ]
+    },
+    "metadata": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1,
+      "nodes": [
+        { "id": "trigger-1", "x": -90, "y": 376, "name": "Manual trigger" },
+        { "id": "agent-1", "x": 360, "y": 376, "name": "Agent Name" }
+      ]
+    }
+  },
+  "viewport": { "x": 0, "y": 0, "zoom": 1 }
+}
+```
+
+### Available Node Templates
+
+| Template | Purpose | Key Config Fields |
+|---|---|---|
+| `manual-trigger` | Entry point — user sends a message to start | `{}` (no config) |
+| `simple-agent` | LLM agent node | `name`, `description`, `instructions`, `invokeModelName`, `maxIterations`, `summarizeMaxTokens`, `summarizeKeepTokens` |
+| `shell-tool` | Execute shell commands | `{}` |
+| `runtime` | Daytona sandbox runtime | `{ "runtimeType": "Daytona" }` |
+| `web-search-tool` | Web search capability | `{}` |
+| `files-tool` | File operations | `{}` |
+| `knowledge-tools` | RAG knowledge base | `{}` |
+| `gh-tool` | GitHub operations | `{}` |
+| `github-resource` | GitHub repo resource | `{}` |
+| `subagents-tool` | Sub-agent delegation | `{}` |
+| `agent-communication-tool` | Inter-agent communication | `{}` |
+
+### Available Models
+
+`claude-sonnet-4.6`, `claude-opus-4.6`, `gpt-4o`, `gpt-4o-mini`, `gpt-4-mini`
+
+### When to Generate a Test Graph
+
+- After analysis reveals **prompt issues** — generate a graph with improved instructions so the user can test the fix
+- After analysis reveals **flow/architecture issues** — generate a graph with restructured nodes
+- After analysis reveals **tool configuration issues** — generate a graph with different tool combinations
+- When the user explicitly asks for a test graph to reproduce a scenario
+
+Output the JSON in a fenced code block with `json` language tag. The user can copy it, save as `.json`, and import via the UI's Import button on the graphs list page.
+
+---
+
 ## Important Guidelines
 
 - **Be evidence-based.** Every issue must reference specific messages with IDs or timestamps.

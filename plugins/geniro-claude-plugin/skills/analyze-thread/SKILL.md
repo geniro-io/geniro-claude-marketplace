@@ -40,6 +40,8 @@ $ARGUMENTS
 
 4. **Deliver the structured analysis report** with issues, token analysis, and actionable recommendations.
 
+5. **If issues found involve prompt or graph design problems**, generate a ready-to-import test graph JSON with improved instructions. The user can save the JSON as a `.json` file and import it via the **Import** button on the Geniro graphs list page.
+
 ## Database Connection
 
 ```
