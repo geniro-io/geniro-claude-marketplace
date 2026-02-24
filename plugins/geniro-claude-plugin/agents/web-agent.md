@@ -341,6 +341,244 @@ Include a **"Visual Verification"** section in your completion report:
 
 ---
 
+## Creating Test Graphs (Reference for Playwright Verification)
+
+When you need to create a test graph during Playwright verification, you must create a **valid, properly connected graph** that saves without errors. The graph must pass backend validation (schema validation, connection compatibility, required connections check).
+
+### Preferred Approach: Create Graphs via API (Recommended)
+
+**Creating graphs directly via the API is almost always the better solution** compared to clicking through the UI with Playwright. It's faster, more reliable, and avoids flaky UI interactions (drag-and-drop, handle connections, waiting for canvas renders).
+
+**Create a graph:**
+```bash
+curl -s -X POST http://localhost:5000/api/v1/graphs \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{
+    "name": "[TEST] Verification Graph",
+    "description": "Test graph for Playwright verification",
+    "temporary": true,
+    "schema": {
+      "nodes": [
+        { "id": "trigger-1", "template": "manual-trigger", "config": {} },
+        {
+          "id": "agent-1",
+          "template": "simple-agent",
+          "config": {
+            "name": "Test Agent",
+            "description": "Test agent for verification",
+            "instructions": "You are a helpful test agent.",
+            "invokeModelName": "gpt-4o-mini",
+            "invokeModelReasoningEffort": "none"
+          }
+        }
+      ],
+      "edges": [
+        { "from": "trigger-1", "to": "agent-1" }
+      ]
+    }
+  }'
+```
+
+**Delete a test graph (cleanup):**
+```bash
+curl -s -X DELETE http://localhost:5000/api/v1/graphs/<graph-id> \
+  -H "Authorization: Bearer <token>"
+```
+
+**When to use API-first approach:**
+- You need a test graph as a **prerequisite** for testing some other UI feature (e.g., testing the graph list page, testing thread execution, testing the canvas interactions)
+- You need to create multiple test graphs quickly
+- You want deterministic, repeatable test setup without UI flakiness
+
+**When to use UI creation instead:**
+- You are specifically **testing the graph creation flow itself** (add node, connect handles, save button)
+- You are testing the **canvas drag-and-drop** or **node configuration modals**
+- The feature under test IS the graph builder UI
+
+**Important:** Always set `"temporary": true` on test graphs so they are automatically cleaned up on server restart. Always prefix names with `[TEST]` so the cleanup agent can find them. Save the returned graph `id` for deletion in your cleanup step.
+
+### Graph Structure
+
+A graph has a **schema** with **nodes** and **edges**:
+- Each **node** has `id` (unique string), `template` (registered template ID), and `config` (template-specific settings)
+- Each **edge** has `from` (source node ID) and `to` (target node ID)
+- Edges define connections: `from → to` means the source connects to the target
+
+### Node Types (NodeKind)
+
+| Kind | Description | Examples |
+|------|-------------|---------|
+| `trigger` | Entry point — starts execution | `manual-trigger` |
+| `simpleAgent` | AI agent — processes input, generates output | `simple-agent` |
+| `tool` | Tool — provides capabilities to agents | `shell-tool`, `files-tool`, `web-search-tool`, `gh-tool`, `knowledge-tools`, `subagents-tool`, `agent-communication-tool` |
+| `runtime` | Container runtime — isolated execution environment | `runtime` |
+| `resource` | External resource connection | `github-resource` |
+| `mcp` | MCP protocol integration | `filesystem-mcp`, `playwright-mcp`, `jira-mcp` |
+
+### Connection Rules (MUST follow)
+
+Every graph must follow these wiring rules — the backend validates them and rejects invalid graphs:
+
+```
+manual-trigger  → must connect to → simple-agent (required)
+simple-agent    → can connect to  → tool, mcp
+shell-tool      → must connect to → runtime (required)
+files-tool      → must connect to → runtime (required)
+gh-tool         → must connect to → runtime (required) AND github-resource (required)
+subagents-tool  → must connect to → runtime (required)
+filesystem-mcp  → must connect to → runtime (required)
+playwright-mcp  → must connect to → runtime (required)
+web-search-tool → no required outputs
+knowledge-tools → no required outputs
+```
+
+**"Required" means the graph will NOT save if the connection is missing.** If you add a `shell-tool`, you MUST also add a `runtime` and connect them.
+
+### Live Templates API — Source of Truth
+
+The connection rules and config schemas above are a snapshot. **The actual live source of truth is the templates API endpoint:**
+
+```
+GET http://localhost:5000/api/v1/templates
+```
+
+This returns an array of all registered templates with their full definition:
+
+```typescript
+Array<{
+  id: string;              // Template ID (e.g., "simple-agent", "shell-tool")
+  name: string;            // Human-readable name (e.g., "Simple agent", "Shell")
+  description: string;     // Template description
+  kind: NodeKind;          // "runtime" | "tool" | "simpleAgent" | "trigger" | "resource" | "mcp"
+  schema: object;          // JSON Schema (AJV format) for node config — defines required/optional fields
+  inputs?: NodeConnection[];  // What this node accepts connections FROM
+  outputs?: NodeConnection[]; // What this node connects TO
+}>
+```
+
+Each connection rule in `inputs`/`outputs` is:
+```typescript
+{
+  type: "kind" | "template",  // Match by NodeKind or specific template ID
+  value: string,               // The kind or template ID to match
+  required?: boolean,          // If true, graph won't save without this connection
+  multiple: boolean            // Whether multiple connections of this type are allowed
+}
+```
+
+**When to use this endpoint:**
+- If the hardcoded rules above seem wrong or outdated — query the live API to get current rules
+- If you need to know the exact config JSON schema for a specific template (required fields, types, defaults)
+- If you encounter a template ID not listed above — new templates may have been added
+- The frontend fetches these same templates on graph page load via `templatesApi.getAllTemplates()`
+
+**Note:** This endpoint requires authentication. During Playwright verification the API server should already be running on port 5000. If it's not running, you cannot query this endpoint — use the hardcoded reference above instead.
+
+### Simplest Valid Graph (use this for basic testing)
+
+In the UI (graph canvas):
+1. Click **"New Graph"** → name it `[TEST] <purpose>`
+2. From the template sidebar, drag **"Manual Trigger"** onto the canvas
+3. From the template sidebar, drag **"Simple Agent"** onto the canvas
+4. **Connect** the trigger output handle to the agent input handle (drag from trigger's output dot to agent's input dot)
+5. **Configure the agent** — click on the agent node and fill in required fields:
+   - **Name**: `Test Agent`
+   - **Description**: `Test agent for verification`
+   - **Instructions**: `You are a helpful test agent.`
+   - **Model**: select any available model (e.g., `gpt-4o-mini`)
+6. **Save** the graph (Ctrl+S or the save button) — verify no validation errors appear
+
+### Graph JSON Examples (reference for more complex graphs)
+
+The API-first approach above shows the simplest graph. Below are additional JSON examples for more complex scenarios — use these as the request body for `POST /api/v1/graphs`:
+
+```json
+{
+  "name": "[TEST] Verification Graph",
+  "description": "Test graph for Playwright verification",
+  "temporary": true,
+  "schema": {
+    "nodes": [
+      {
+        "id": "trigger-1",
+        "template": "manual-trigger",
+        "config": {}
+      },
+      {
+        "id": "agent-1",
+        "template": "simple-agent",
+        "config": {
+          "name": "Test Agent",
+          "description": "Test agent for verification",
+          "instructions": "You are a helpful test agent. Answer briefly.",
+          "invokeModelName": "gpt-4o-mini",
+          "invokeModelReasoningEffort": "none"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "trigger-1",
+        "to": "agent-1"
+      }
+    ]
+  }
+}
+```
+
+### Graph with Tools (when testing tool-related features)
+
+```json
+{
+  "name": "[TEST] Graph with Tools",
+  "temporary": true,
+  "schema": {
+    "nodes": [
+      { "id": "trigger-1", "template": "manual-trigger", "config": {} },
+      {
+        "id": "agent-1",
+        "template": "simple-agent",
+        "config": {
+          "name": "Test Agent",
+          "description": "Agent with shell tool",
+          "instructions": "You are a test agent with shell access.",
+          "invokeModelName": "gpt-4o-mini",
+          "invokeModelReasoningEffort": "none"
+        }
+      },
+      { "id": "shell-1", "template": "shell-tool", "config": {} },
+      {
+        "id": "runtime-1",
+        "template": "runtime",
+        "config": { "runtimeType": "Docker" }
+      }
+    ],
+    "edges": [
+      { "from": "trigger-1", "to": "agent-1" },
+      { "from": "agent-1", "to": "shell-1" },
+      { "from": "shell-1", "to": "runtime-1" }
+    ]
+  }
+}
+```
+
+### Common Mistakes That Cause Save Errors
+
+1. **Missing required connection** — adding a `shell-tool` without connecting it to a `runtime` node
+2. **Wrong connection direction** — connecting `agent → trigger` instead of `trigger → agent`
+3. **Missing agent config** — `simple-agent` requires `name`, `description`, `instructions`, and `invokeModelName` fields
+4. **Incompatible connection** — connecting a `trigger` directly to a `tool` (triggers can only connect to agents)
+5. **Duplicate node IDs** — each node `id` must be unique within the graph
+6. **Dangling edges** — edge references a node ID that doesn't exist
+7. **Circular dependencies** — `A → B → C → A` is not allowed
+
+### After Testing — Cleanup
+
+**Always delete your test graphs when verification is complete.** Navigate to the graphs list, find entities prefixed with `[TEST]`, and delete them. The app must be left in the same state as before testing.
+
+---
+
 ## Container Runtime Safety (MANDATORY)
 
 **NEVER start, stop, or manage Docker/Podman containers yourself.** The Geniro project may use Docker or Podman depending on the developer's environment.
