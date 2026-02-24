@@ -83,8 +83,8 @@ geniro-claude-marketplace/
 - **Test Reviewer** (opus) — test quality evaluation during Phase 4, runs alongside reviewer.
 - **Cleanup Agent** (haiku) — runs at the end of Phase 6, detects and removes leftover screenshots, temp files, and stops lingering servers.
 - **Feature backlog** — feature specs live in `.claude/project-features/` (created on first use). Completed features are archived to `.claude/project-features/completed/`. Create with `/new-feature`, manage with `/features`, implement with `/orchestrate feature: <name>`.
-- **Knowledge base** — project-specific knowledge persists across sessions in `.claude/project-knowledge/` directories:
-  - API learnings → `geniro/.claude/project-knowledge/api-learnings.md`
-  - Web learnings → `geniro-web/.claude/project-knowledge/web-learnings.md`
-  - Architecture decisions → `.claude/project-knowledge/architecture-decisions.md`
-  - Review feedback → `.claude/project-knowledge/review-feedback.md`
+- **Knowledge base** — accumulated learnings persist across sessions in `.claude/project-knowledge/`:
+  - `.claude/project-knowledge/api-learnings.md` — API patterns, gotchas, commands
+  - `.claude/project-knowledge/web-learnings.md` — Web patterns, gotchas, components
+  - `.claude/project-knowledge/architecture-decisions.md` — Design choices with rationale
+  - `.claude/project-knowledge/review-feedback.md` — Recurring reviewer findings

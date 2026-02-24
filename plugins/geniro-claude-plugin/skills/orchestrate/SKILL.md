@@ -82,18 +82,18 @@ ls .claude/project-features/<name>.md 2>/dev/null
 
 **Step 2: Load the knowledge base.**
 
-Knowledge is stored in project-specific directories:
+Knowledge is stored in `.claude/project-knowledge/`:
 
 ```bash
 # Check if any knowledge file has actual entries (lines starting with ### [)
-grep -rl "^### \[" geniro/.claude/project-knowledge/ geniro-web/.claude/project-knowledge/ .claude/project-knowledge/ 2>/dev/null
+grep -rl "^### \[" .claude/project-knowledge/ 2>/dev/null
 ```
 
 **If entries exist**, read the files that have content:
 
 ```bash
-cat geniro/.claude/project-knowledge/api-learnings.md 2>/dev/null
-cat geniro-web/.claude/project-knowledge/web-learnings.md 2>/dev/null
+cat .claude/project-knowledge/api-learnings.md 2>/dev/null
+cat .claude/project-knowledge/web-learnings.md 2>/dev/null
 cat .claude/project-knowledge/architecture-decisions.md 2>/dev/null
 cat .claude/project-knowledge/review-feedback.md 2>/dev/null
 ```
@@ -593,12 +593,12 @@ Review the entire task execution — architect spec, engineer reports, reviewer 
 
 Create the knowledge directory if it doesn't exist:
 ```bash
-mkdir -p geniro/.claude/project-knowledge geniro-web/.claude/project-knowledge .claude/project-knowledge
+mkdir -p .claude/project-knowledge
 ```
 
-Knowledge file locations:
-- API-specific → `geniro/.claude/project-knowledge/api-learnings.md`
-- Web-specific → `geniro-web/.claude/project-knowledge/web-learnings.md`
+Knowledge file locations (all in `.claude/project-knowledge/`):
+- API-specific → `.claude/project-knowledge/api-learnings.md`
+- Web-specific → `.claude/project-knowledge/web-learnings.md`
 - Architecture decisions → `.claude/project-knowledge/architecture-decisions.md`
 - Reviewer patterns → `.claude/project-knowledge/review-feedback.md`
 

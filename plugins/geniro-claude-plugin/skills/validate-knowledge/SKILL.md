@@ -13,9 +13,9 @@ argument-hint: "[fix|report] — 'report' for dry-run (default), 'fix' to auto-r
 
 # Knowledge Base Validator
 
-Validate the Geniro knowledge base across project-specific directories:
-- `geniro/.claude/project-knowledge/api-learnings.md`
-- `geniro-web/.claude/project-knowledge/web-learnings.md`
+Validate the Geniro knowledge base in `.claude/project-knowledge/`:
+- `.claude/project-knowledge/api-learnings.md`
+- `.claude/project-knowledge/web-learnings.md`
 - `.claude/project-knowledge/architecture-decisions.md`
 - `.claude/project-knowledge/review-feedback.md`
 

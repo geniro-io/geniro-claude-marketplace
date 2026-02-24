@@ -17,16 +17,16 @@ You manage the Geniro agents' accumulated knowledge stored in project-specific d
 
 ## Knowledge Files
 
-Knowledge is split across project directories:
+All knowledge files live in `.claude/project-knowledge/`:
 
-- `geniro/.claude/project-knowledge/api-learnings.md` — API backend patterns, gotchas, test patterns, useful commands
-- `geniro-web/.claude/project-knowledge/web-learnings.md` — Web frontend patterns, gotchas, component patterns, useful commands
-- `.claude/project-knowledge/architecture-decisions.md` — Significant design choices with context and rationale (cross-cutting)
-- `.claude/project-knowledge/review-feedback.md` — Recurring reviewer feedback patterns and quality trends (cross-cutting)
+- `.claude/project-knowledge/api-learnings.md` — API backend patterns, gotchas, test patterns, useful commands
+- `.claude/project-knowledge/web-learnings.md` — Web frontend patterns, gotchas, component patterns, useful commands
+- `.claude/project-knowledge/architecture-decisions.md` — Significant design choices with context and rationale
+- `.claude/project-knowledge/review-feedback.md` — Recurring reviewer feedback patterns and quality trends
 
-**On first use**, create directories if they don't exist:
+**On first use**, create the directory if it doesn't exist:
 ```bash
-mkdir -p geniro/.claude/project-knowledge geniro-web/.claude/project-knowledge .claude/project-knowledge
+mkdir -p .claude/project-knowledge
 ```
 
 ## Commands
@@ -50,7 +50,7 @@ Interactively add a new knowledge entry:
 ### `search <query>`
 Search across all knowledge files for entries matching the query:
 ```bash
-grep -rin -B2 -A5 "<query>" geniro/.claude/project-knowledge/ geniro-web/.claude/project-knowledge/ .claude/project-knowledge/ 2>/dev/null
+grep -rin -B2 -A5 "<query>" .claude/project-knowledge/ 2>/dev/null
 ```
 Present results grouped by file. Show the full entry (from `### [` header to the next `###` or end of section) for each match.
 

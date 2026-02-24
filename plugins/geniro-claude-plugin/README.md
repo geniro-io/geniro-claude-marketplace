@@ -42,11 +42,23 @@ Multi-agent orchestrator plugin for the Geniro platform. Provides a full develop
 
 ## Installation
 
-From the parent directory containing both `geniro/` and `geniro-web/`:
-
 ```bash
 claude plugin add ./geniro-claude-marketplace
 ```
+
+**Important:** Always run Claude Code from the **root directory** that contains all Geniro projects side by side:
+
+```
+Geniro/                          ← run `claude` from HERE
+├── geniro/                      # API backend (NestJS)
+├── geniro-web/                  # Web frontend (React + Vite)
+├── geniro-claude-marketplace/   # This plugin repo
+└── .claude/                     # Shared config, knowledge, features
+    ├── project-knowledge/       # Accumulated learnings
+    └── project-features/        # Feature backlog
+```
+
+The plugin expects this layout. Agents navigate into `geniro/` and `geniro-web/` from the root CWD. Knowledge and feature specs are stored in `.claude/` at the root level so they're shared across all repos.
 
 ## Available Commands
 
@@ -231,22 +243,16 @@ Each feature is a Markdown file with YAML frontmatter:
 
 ```
 .claude/
-├── project-features/           # Feature backlog
+├── project-features/               # Feature backlog
 │   ├── graph-template-market.md    # Approved, ready to implement
 │   ├── thread-auto-naming.md       # In progress
 │   └── completed/                  # Archived completed features
 │       └── runtime-health-check.md
-└── project-knowledge/          # Cross-cutting knowledge
-    ├── architecture-decisions.md
-    └── review-feedback.md
-
-geniro/.claude/
-└── project-knowledge/
-    └── api-learnings.md        # API-specific knowledge
-
-geniro-web/.claude/
-└── project-knowledge/
-    └── web-learnings.md        # Web-specific knowledge
+└── project-knowledge/              # All accumulated learnings
+    ├── api-learnings.md            # API patterns, gotchas, commands
+    ├── web-learnings.md            # Web patterns, gotchas, components
+    ├── architecture-decisions.md   # Design choices with rationale
+    └── review-feedback.md          # Recurring reviewer findings
 ```
 
 ## Self-Improvement System
@@ -274,12 +280,14 @@ The plugin maintains a persistent knowledge base in project-specific `.claude/pr
 
 ### Knowledge Files
 
-| File | Location | Contents |
-|------|----------|----------|
-| `api-learnings.md` | `geniro/.claude/project-knowledge/` | API patterns, gotchas, test patterns, commands |
-| `web-learnings.md` | `geniro-web/.claude/project-knowledge/` | Web patterns, gotchas, component patterns, commands |
-| `architecture-decisions.md` | `.claude/project-knowledge/` | Design choices with rationale and consequences |
-| `review-feedback.md` | `.claude/project-knowledge/` | Recurring reviewer findings, security patterns, quality trends |
+All files in `.claude/project-knowledge/`:
+
+| File | Contents |
+|------|----------|
+| `api-learnings.md` | API patterns, gotchas, test patterns, commands |
+| `web-learnings.md` | Web patterns, gotchas, component patterns, commands |
+| `architecture-decisions.md` | Design choices with rationale and consequences |
+| `review-feedback.md` | Recurring reviewer findings, security patterns, quality trends |
 
 ## Agents
 
