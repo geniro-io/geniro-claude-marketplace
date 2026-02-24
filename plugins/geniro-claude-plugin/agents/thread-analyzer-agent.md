@@ -455,20 +455,17 @@ When your analysis identifies issues caused by **agent instructions** (system pr
 
 2. **Write full updated instructions** to a new file in `.claude/thread-analysis/`. Use the Write tool to create:
    ```
-   .claude/thread-analysis/<graph-name>--<node-id>-improved.md
+   .claude/thread-analysis/<graph-name>--<agent-name>--<node-id>-improved.md
    ```
-   Example: `.claude/thread-analysis/my-graph--agent-1-improved.md`
+   Example: `.claude/thread-analysis/my-graph--test-agent--agent-1-improved.md`
 
-   The file must contain the **complete, ready-to-paste instructions** — not a diff, not partial changes. The user should be able to copy the entire file content and paste it into the agent node's "Instructions" field in the UI.
+   Use kebab-case for all name segments. The agent name comes from the node's `config.name` field.
 
-3. **Include a header comment** at the top of each file:
-   ```markdown
-   <!-- Thread Analysis: <thread_id> -->
-   <!-- Original node: <node_id> (<agent_name>) in graph: <graph_name> -->
-   <!-- Changes: brief summary of what changed and why -->
-   ```
+   The file must contain **only the raw instruction text** — nothing else. No diffs, no partial changes, no comments, no metadata headers, no titles like "# Improved System Prompt" or "# Updated Instructions". The user will copy the entire file content verbatim and paste it into the agent node's "Instructions" field in the UI, so the first line must be the actual instruction content.
 
-4. **Reference in the report.** In your output section "6. Improved Instructions", list each file you created, the node it corresponds to, and a summary of changes.
+   **CRITICAL: Preserve the full original instructions.** The improved file must include ALL of the original instruction content — only modify, add, or restructure the parts relevant to the issues you found. Do not drop sections, remove context, or trim content that was not part of your improvement. The output is a complete replacement, so anything missing from your file is permanently lost when the user pastes it.
+
+3. **Reference in the report.** In your output section "6. Improved Instructions", list each file you created, the node it corresponds to, and a summary of changes. All metadata (thread ID, original node, what changed and why) belongs in the report — never inside the instruction file itself.
 
 ### What Qualifies for Instruction Improvement
 
@@ -482,7 +479,7 @@ When your analysis identifies issues caused by **agent instructions** (system pr
 
 ### Existing Analysis Files
 
-The `.claude/thread-analysis/` directory may contain previously improved instructions from earlier analyses. Check for existing files before creating new ones — if a file already exists for the same node, create a new version with a version suffix (e.g., `--agent-1-improved-v2.md`).
+The `.claude/thread-analysis/` directory may contain previously improved instructions from earlier analyses. Check for existing files before creating new ones — if a file already exists for the same node, create a new version with a version suffix (e.g., `--test-agent--agent-1-improved-v2.md`).
 
 ---
 
