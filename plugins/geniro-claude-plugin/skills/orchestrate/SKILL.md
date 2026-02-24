@@ -516,17 +516,21 @@ After the user confirms they're satisfied:
    ```bash
    cd geniro && pnpm test:integration src/__tests__/integration/<feature>/<test>.int.ts
    ```
-3. **Final cleanup sweep** — verify no temporary artifacts remain from any agent:
-   ```bash
-   # Check for leftover Playwright screenshots
-   find . -maxdepth 4 \( -name "page-*.png" -o -name "page-*.jpeg" -o -name "screenshot-*.png" \) 2>/dev/null
-   # Check for leftover temp files
-   find . -maxdepth 4 \( -name "*.tmp" -o -name "debug-*.log" -o -name "scratch-*" \) 2>/dev/null
-   # Check for running dev servers that should be stopped
-   lsof -ti :5000 2>/dev/null && echo "WARNING: API server still running on port 5000"
-   lsof -ti :5174 2>/dev/null && echo "WARNING: Web dev server still running on port 5174"
+3. **Delegate to `cleanup-agent`** — run the automated cleanup sweep to find and remove leftover artifacts:
    ```
-   If any artifacts or servers remain, clean them up now. Delete screenshots, temp files, and kill lingering servers.
+   Run a full cleanup sweep of the workspace after task completion.
+
+   ## Repos to check
+   - geniro/ (API backend)
+   - geniro-web/ (Web frontend)
+
+   ## Test entities to look for
+   [If web-agent reported creating test entities, list them here with names/IDs.
+    If no test entities were reported, state: "No test entities reported by agents, but check for any [TEST] prefixed entities owned by claude-test user."]
+
+   Detect and clean: Playwright screenshots, temp files, debug logs, running servers on ports 5000/5174, orphaned background processes, leftover test entities ([TEST] prefixed graphs/threads created by claude-test user). Produce a cleanup report.
+   ```
+   The cleanup agent will automatically delete garbage files, stop lingering servers, and attempt to remove test entities. If it reports "NEEDS ATTENTION", review the flagged items and decide whether to act on them.
 4. **Provide a final report** with:
    - Files modified per repo
    - Key decisions made (from architect's rationale)

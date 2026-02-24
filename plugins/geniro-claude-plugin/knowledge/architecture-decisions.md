@@ -69,9 +69,9 @@ Record of significant architecture decisions made during development. Each entry
 ### [2026-02-24] Decision: Auth context passed as parameter, not injected into services
 - **Task**: Fix notification handlers broken by NestJS scope bubbling
 - **Context**: `AuthContextService` is `@Injectable({ scope: Scope.REQUEST })` because it needs `FastifyRequest`. Any service injecting it becomes REQUEST-scoped, breaking module-level `onModuleInit()` and preventing use in non-HTTP contexts (notification handlers, queue workers).
-- **Decision**: Controllers use `@CtxStorage() contextDataStorage: AuthContextStorage` decorator and pass auth context as parameter to services. Services NEVER inject `AuthContextService` directly. For notification handlers needing REQUEST-scoped services, use `ModuleRef.create()` for lazy resolution.
-- **Established pattern**: 5 controllers already use `@CtxStorage()` (GraphsController, GraphRevisionsController, KnowledgeController, GitRepositoriesController, GitHubAppController). ThreadsController is the last holdout.
-- **Consequences**: Services stay singleton-scoped. No scope bubbling. Services are testable without mocking request context. Notification handlers can consume services directly (if singleton) or via `ModuleRef.create()` (if still scoped).
+- **Decision**: Controllers use `@CtxStorage() ctx: AuthContextStorage` decorator and pass auth context as parameter to services. Services NEVER inject `AuthContextService` directly.
+- **Completed**: All 8 controllers now use `@CtxStorage()` (GraphsController, GraphRevisionsController, KnowledgeController, GitRepositoriesController, GitHubAppController, ThreadsController, AnalyticsController, AiSuggestionsController). Zero services inject `AuthContextService`.
+- **Consequences**: All services are singleton-scoped. No scope bubbling. Notification handlers use direct constructor injection. Services are testable without mocking request context.
 
 ### [2026-02-21] Decision: System settings endpoint for feature flags
 - **Task**: Conditionally show/hide GitHub App UI based on server configuration

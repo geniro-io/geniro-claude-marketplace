@@ -51,7 +51,8 @@ geniro-claude-marketplace/
     │   ├── skeptic-agent.md           # Spec validation (mirage detection)
     │   ├── security-auditor-agent.md  # OWASP security review
     │   ├── completeness-validator-agent.md  # Requirements traceability
-    │   └── test-reviewer-agent.md     # Test quality evaluation
+    │   ├── test-reviewer-agent.md     # Test quality evaluation
+    │   └── cleanup-agent.md           # Post-pipeline garbage cleanup
     ├── skills/                        # Skill definitions (SKILL.md)
     │   ├── orchestrate/               # Full pipeline command
     │   ├── plan/                      # Architect-only command
@@ -79,4 +80,5 @@ geniro-claude-marketplace/
 - **Security Auditor** (opus) — OWASP Top 10 review during Phase 4, runs alongside reviewer.
 - **Completeness Validator** (opus) — requirements traceability check during Phase 1b, runs alongside skeptic.
 - **Test Reviewer** (opus) — test quality evaluation during Phase 4, runs alongside reviewer.
+- **Cleanup Agent** (haiku) — runs at the end of Phase 6, detects and removes leftover screenshots, temp files, and stops lingering servers.
 - **Knowledge base** — files in `knowledge/` persist across sessions. Paths in skills reference `geniro-claude-marketplace/plugins/geniro-claude-plugin/knowledge/` (relative to the project root CWD).

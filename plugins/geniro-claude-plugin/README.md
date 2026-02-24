@@ -21,12 +21,12 @@ Multi-agent orchestrator plugin for the Geniro platform. Provides a full develop
 │  7. Extract & save learnings to knowledge base                      │
 └──┬─────┬──────┬──────┬──────┬──────┬──────┬──────┬─────────────────┘
    │     │      │      │      │      │      │      │
-┌──▼──┐┌─▼───┐┌─▼───┐┌─▼───┐┌─▼───┐┌─▼───┐┌─▼───┐┌─▼──────┐
-│archi││ api ││ web ││revie││skept││secur││compl││test    │
-│tect ││agent││agent││wer  ││ic   ││ity  ││ete- ││revie- │
-│     ││     ││     ││     ││     ││audit││ness ││wer    │
-│opus ││opus ││opus ││opus ││opus ││opus ││opus ││opus   │
-└─────┘└─────┘└─────┘└─────┘└─────┘└─────┘└─────┘└───────┘
+┌──▼──┐┌─▼───┐┌─▼───┐┌─▼───┐┌─▼───┐┌─▼───┐┌─▼───┐┌─▼──────┐┌─▼──────┐
+│archi││ api ││ web ││revie││skept││secur││compl││test    ││clean  │
+│tect ││agent││agent││wer  ││ic   ││ity  ││ete- ││revie- ││up     │
+│     ││     ││     ││     ││     ││audit││ness ││wer    ││       │
+│opus ││opus ││opus ││opus ││opus ││opus ││opus ││opus   ││haiku  │
+└─────┘└─────┘└─────┘└─────┘└─────┘└─────┘└─────┘└───────┘└───────┘
                   │
             ┌─────▼─────┐
             │ knowledge/ │  Persistent learnings
@@ -158,6 +158,7 @@ Run a dedicated knowledge base health check: detect stale references, duplicates
 | Security Auditor | Opus | OWASP analysis requires deep security understanding |
 | Completeness Validator | Opus | Requirements traceability requires analytical reasoning |
 | Test Reviewer | Opus | Test quality evaluation requires understanding intent vs. assertion |
+| Cleanup Agent | Haiku | Fast garbage detection and removal — simple file/process checks |
 | Learn Manager | Sonnet | Knowledge CRUD — straightforward operations |
 | Knowledge Validator | Sonnet | File existence checks — straightforward operations |
 
@@ -205,6 +206,7 @@ The plugin maintains a persistent knowledge base in `geniro-claude-marketplace/p
 | `security-auditor-agent` | Security review | Both repos | OWASP Top 10 audit adapted for NestJS + React stack |
 | `completeness-validator-agent` | Requirements check | N/A (reads spec) | Bidirectional traceability — requirements ↔ spec ↔ tests |
 | `test-reviewer-agent` | Test quality | Both repos | Litmus test, assertion quality, pyramid balance, scenario coverage |
+| `cleanup-agent` | Post-pipeline cleanup | Both repos | Deletes leftover screenshots, temp files, stops lingering servers, detects garbage |
 
 ## Full Pipeline Flow
 
@@ -261,8 +263,9 @@ You describe a feature
 └────────┬────────┘
          ▼
 ┌─────────────────┐
-│  6. SUMMARY      │  Final build verification, summary report with
-│                  │  files changed, decisions, manual steps, risks.
+│  6. SUMMARY &    │  Final build verification, cleanup-agent sweep
+│     CLEANUP      │  (screenshots, temp files, servers), summary
+│                  │  report with files, decisions, manual steps.
 └────────┬────────┘
          ▼
 ┌─────────────────┐
@@ -286,7 +289,8 @@ geniro-claude-marketplace/
 │   ├── skeptic-agent.md         # Skeptic: spec validation
 │   ├── security-auditor-agent.md # Security: OWASP Top 10 audit
 │   ├── completeness-validator-agent.md # Completeness: requirements traceability
-│   └── test-reviewer-agent.md   # Test reviewer: test quality evaluation
+│   ├── test-reviewer-agent.md   # Test reviewer: test quality evaluation
+│   └── cleanup-agent.md        # Cleanup: post-pipeline garbage sweep
 ├── hooks/
 │   └── hooks.json               # Lifecycle hooks
 ├── knowledge/                   # Persistent self-improvement knowledge base

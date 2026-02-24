@@ -115,15 +115,9 @@ Accumulated knowledge about the Geniro API codebase (`geniro/`). Updated automat
 
 ### [2026-02-24] Gotcha: Injecting AuthContextService into services causes NestJS scope bubbling
 - **What happened**: ThreadsService injected `AuthContextService` (REQUEST-scoped) → became REQUEST-scoped itself → notification handlers that depended on ThreadsService became REQUEST-scoped → module's `onModuleInit()` stopped firing
-- **Root cause**: NestJS propagates scope — if ANY dependency (direct or transitive) is `Scope.REQUEST`, the consumer becomes REQUEST-scoped too. This silently breaks `onModuleInit()` on module classes.
-- **Fix**: Use `ModuleRef.create(ThreadsService)` in notification handlers to lazily resolve the scoped service. Long-term fix: refactor ThreadsService to accept `userId`/`AuthContextStorage` as method parameters instead of injecting `AuthContextService`.
+- **Root cause**: NestJS propagates scope — if ANY dependency (direct or transitive) is `Scope.REQUEST`, the consumer becomes REQUEST-scoped too. This silently breaks `onModuleInit()` on module classes. Note: `Scope.TRANSIENT` does NOT bubble — only `Scope.REQUEST`.
+- **Fix**: Removed `AuthContextService` from ThreadsService, AnalyticsService, and AiSuggestionsService. All 3 now accept `ctx: AuthContextStorage` as a method parameter. Controllers use `@CtxStorage() ctx: AuthContextStorage` decorator.
 - **Prevention**: Never inject `AuthContextService` into services. Pass auth context from controller → service as a parameter. If a service MUST be used outside HTTP context (e.g., notification handlers), it must be singleton-scoped.
-
-### [2026-02-24] Gotcha: DO NOT remove ModuleRef.create() from notification handlers
-- **What happened**: Commit `f8fe67e` ("remove ModuleRef and forwardRef") replaced `moduleRef.create(ThreadsService)` with direct `ThreadsService` injection in notification handlers. This caused scope bubbling and broke `onModuleInit()`.
-- **Root cause**: `ThreadsService` → `AuthContextService` (REQUEST) → handlers became REQUEST-scoped → module `onModuleInit()` never fired → no notification handlers were registered → no WebSocket notifications delivered
-- **Fix**: Restored `ModuleRef.create(ThreadsService)` pattern in `AgentInvokeNotificationHandler`, `ThreadLifecycleNotificationHandler`, `ThreadUpdateNotificationHandler`
-- **Applies to**: Any notification handler that needs a service with REQUEST-scoped transitive dependencies. `ModuleRef.create()` is the correct pattern here — it avoids scope bubbling.
 
 ### [2026-02-22] Gotcha: Unused constructor injections accumulate silently
 - **Context**: Found 7 unused `private readonly` injections across the codebase during refactoring audit
