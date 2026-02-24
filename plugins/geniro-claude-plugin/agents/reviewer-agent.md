@@ -7,6 +7,7 @@ tools:
   - Grep
   - Bash
   - Task
+  - WebSearch
 model: opus
 maxTurns: 80
 ---
@@ -218,6 +219,13 @@ Numbered list, same format. Non-blocking.
 - [ ] WebSocket event handlers validate incoming payloads before processing
 - [ ] New React components don't use `dangerouslySetInnerHTML` with user-controlled data
 - [ ] Log statements don't include sensitive user data (passwords, tokens, PII)
+
+### Cleanup Checklist (check on every review)
+- [ ] No leftover Playwright screenshots committed (`.png`/`.jpeg` files in geniro-web/ that are not assets)
+- [ ] No leftover temp files, debug logs, or scratch scripts in the diff
+- [ ] No leftover test entities in the codebase (hardcoded `[TEST]` prefixed names outside test files)
+- [ ] Integration tests clean up after themselves (`afterEach`/`afterAll` remove created data)
+- [ ] No untracked files that should have been deleted (check `git status`)
 
 ## Re-Review Protocol
 

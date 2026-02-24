@@ -180,7 +180,7 @@ Test descriptions should state the expected behavior:
 ### Integration Tests (.int.ts)
 - Located in `src/__tests__/integration/<feature>/`
 - Test real service calls with actual database
-- Use Docker containers for database (lazy-started)
+- Use containers for database (lazy-started via Docker/Podman — agents must never start containers themselves)
 - Run with `pnpm test:integration <path>`
 - **Known gotcha**: notifications inside uncommitted transactions silently fail — verify test handles this
 

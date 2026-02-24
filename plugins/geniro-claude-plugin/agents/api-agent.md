@@ -9,6 +9,7 @@ tools:
   - Glob
   - Grep
   - Task
+  - WebSearch
 model: opus
 maxTurns: 60
 ---
@@ -237,13 +238,46 @@ cd geniro/apps/api && pnpm test:e2e:local --spec "cypress/e2e/<path-to-test>.cy.
 
 ---
 
-## Environment Hygiene
+## Container Runtime Safety (MANDATORY)
+
+**NEVER start, stop, or manage Docker/Podman containers yourself.** The Geniro project may use Docker or Podman depending on the developer's environment. Before any task:
+
+1. **Read `geniro/CLAUDE.md`** to check which container runtime the project uses (look for `pnpm deps:up` and related commands).
+2. **Check if services are already running** before attempting any operation that needs them:
+   ```bash
+   # Check if PostgreSQL is reachable
+   lsof -i :5432 2>/dev/null
+   # Check if Redis is reachable
+   lsof -i :6379 2>/dev/null
+   # Check if the API server is running
+   lsof -i :5000 2>/dev/null
+   ```
+3. **If services are NOT running**, report this to the orchestrator: "Required services (Postgres/Redis/etc.) are not running. The user needs to run `pnpm deps:up` manually."
+4. **NEVER run `docker`/`podman` commands directly** — no `docker run`, `docker start`, `docker compose`, `podman run`, etc. Container management is the user's responsibility.
+5. **NEVER attempt to start `pnpm deps:up`** — this starts container infrastructure and requires the correct runtime (Docker/Podman) configured on the host.
+6. For integration tests that use the Docker runtime module (`runtime/`), the containers are **lazy-started by the application** — you don't manage them. If tests timeout due to container cold-start, increase the test timeout rather than trying to pre-start containers.
+
+---
+
+## Environment Hygiene (MANDATORY — zero tolerance for leftover artifacts)
 
 - Prefer existing project tooling over ad-hoc temporary scripts.
-- If you create temporary artifacts (scratch files, debug logs), remove them before finishing.
+- **Delete ALL temporary artifacts before reporting completion:**
+  - Test data created in the database during integration/E2E tests (tests must clean up in `afterEach`/`afterAll`)
+  - Scratch files, debug logs, temp configs, seed scripts not part of the implementation
+  - Any generated output files (coverage reports, test snapshots) not committed intentionally
+  - Any files not part of the intentional implementation
 - Only intentional, task-relevant changes should remain when you report completion.
 - Clean up large debug outputs. Never leave sensitive data in logs or temporary files.
 - **Shut down any servers you started.** If you started the API dev server (`pnpm start:dev`) or any other background process during your task, you MUST stop it before finishing. Use `kill` with the PID or `lsof -ti :5000 | xargs kill` to stop the API server. Never leave background processes running after your task is complete.
+- **Final cleanup check** — before your final report, run:
+  ```bash
+  # Verify no leftover temp files
+  find . -maxdepth 3 \( -name "*.tmp" -o -name "debug-*.log" -o -name "scratch-*" \) 2>/dev/null
+  # Verify no untracked files that shouldn't be there
+  git status --short | grep "^??" | head -20
+  ```
+  If unexpected untracked files are found, either delete them or explain why they should remain.
 
 ---
 
@@ -298,7 +332,7 @@ All feature modules live under `apps/api/src/v1/`:
 - `notification-handlers/` — Notification processing and routing
 
 **Infrastructure & integrations:**
-- `runtime/` — Docker runtime management
+- `runtime/` — Container runtime management (Docker/Podman via Dockerode — NEVER start containers yourself)
 - `knowledge/` — Vector storage integration
 - `qdrant/` — Qdrant vector DB client
 - `litellm/` — LiteLLM proxy for LLM routing

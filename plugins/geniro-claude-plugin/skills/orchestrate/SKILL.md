@@ -228,7 +228,8 @@ Work in the geniro/ directory.
 - **Write integration tests (.int.ts) — MANDATORY for new features.** Place them in `src/__tests__/integration/<feature>/`. Test the complete business workflow through direct service calls: happy path + 2-3 edge/error cases. Follow existing integration test patterns (see `src/__tests__/integration/` for examples). Run each integration test file individually: `pnpm test:integration src/__tests__/integration/<path>.int.ts`
 - Run `pnpm run full-check` in the geniro/ root and fix any errors
 - **Shut down any servers you started** (e.g., `pnpm start:dev`). Use `lsof -ti :5000 | xargs kill` before reporting completion. Never leave background processes running.
-- After completing, report: files created/modified, full-check result, integration test results (commands run + pass/fail), any new patterns/gotchas discovered
+- **Clean up ALL temporary artifacts** before reporting: delete temp files, debug logs, scratch scripts. Verify no untracked garbage remains (`git status --short | grep "^??"`). Only intentional implementation files should remain.
+- After completing, report: files created/modified, full-check result, integration test results (commands run + pass/fail), cleanup completed (yes/no), any new patterns/gotchas discovered
 ```
 
 **Delegation template for Web tasks:**
@@ -262,7 +263,8 @@ Work in the geniro-web/ directory.
   7. Report: pages visited, screenshots reviewed, issues found/fixed
   If Playwright MCP tools are not available in the agent session, report this clearly — the orchestrator will perform visual verification instead. Do NOT silently skip.
 - **Shut down any servers you started** (e.g., `pnpm dev`). Use `lsof -ti :5174 | xargs kill` before reporting completion. Never leave background processes running.
-- After completing, report: files created/modified, API client regenerated (yes/no), full-check result, Playwright verification result, any new patterns/gotchas discovered
+- **Clean up ALL temporary artifacts** before reporting: delete ALL Playwright screenshots (`find . -maxdepth 3 -name "page-*.png" -o -name "page-*.jpeg" | xargs rm -f`), delete ALL test entities created during Playwright verification (navigate back and remove `[TEST]` entities), remove temp files, debug logs, scratch scripts. Only intentional implementation files should remain.
+- After completing, report: files created/modified, API client regenerated (yes/no), full-check result, Playwright verification result, cleanup completed (yes/no — list what was cleaned), any new patterns/gotchas discovered
 ```
 
 **Execution rules:**
@@ -284,9 +286,12 @@ Before moving to Phase 4, confirm that **every** delegated agent has returned an
 3. **Check testing completeness:**
    - **API agent**: Must report both unit test results AND integration test results (with specific `pnpm test:integration <file>` commands run). If the agent skipped integration tests for a new feature, re-delegate with explicit instructions to write them.
    - **Web agent**: Must report Playwright visual verification results (pages visited, screenshots reviewed, interactions tested). **"Logic-only change" or "no visual changes" is NOT a valid justification for skipping Playwright.** The only acceptable reason to skip is if Playwright MCP tools were not available in the agent's session — in that case, YOU (the orchestrator) must perform the Playwright verification yourself before proceeding. If the agent skipped without this reason, re-delegate with instructions to complete verification.
-4. **If any agent failed `full-check`** — do NOT proceed. Re-delegate to that agent with instructions to fix the failures.
-5. **If any agent reported a blocker** — route it to the architect for investigation before proceeding.
-6. **Only when ALL agents report success** (all `full-check` passes, all required tests written and passing, no unresolved blockers) → proceed to Phase 4.
+4. **Check cleanup completed:**
+   - **API agent**: Must confirm no leftover temp files, debug logs, or scratch scripts. Must confirm servers shut down.
+   - **Web agent**: Must confirm ALL Playwright screenshots deleted, ALL test entities removed from the app, dev server stopped, no leftover temp files. If the agent did not report cleanup, re-delegate with instructions: "Clean up all temporary artifacts: delete Playwright screenshots, remove test entities from the app, stop dev server, remove temp files. Report what was cleaned."
+5. **If any agent failed `full-check`** — do NOT proceed. Re-delegate to that agent with instructions to fix the failures.
+6. **If any agent reported a blocker** — route it to the architect for investigation before proceeding.
+7. **Only when ALL agents report success** (all `full-check` passes, all required tests written and passing, cleanup confirmed, no unresolved blockers) → proceed to Phase 4.
 
 **→ After ALL implementing agents complete successfully, immediately proceed to Phase 4.**
 
@@ -498,7 +503,7 @@ After the reviewer approves, **present the results to the user** and ask if they
 
 **This is the main feedback loop.** The user may go through several rounds of "change X, tweak Y" before being satisfied. Be patient — route each request to the right agent and loop back.
 
-### Phase 6: Summary
+### Phase 6: Summary & Cleanup
 
 After the user confirms they're satisfied:
 
@@ -511,12 +516,24 @@ After the user confirms they're satisfied:
    ```bash
    cd geniro && pnpm test:integration src/__tests__/integration/<feature>/<test>.int.ts
    ```
-3. **Provide a final report** with:
+3. **Final cleanup sweep** — verify no temporary artifacts remain from any agent:
+   ```bash
+   # Check for leftover Playwright screenshots
+   find . -maxdepth 4 \( -name "page-*.png" -o -name "page-*.jpeg" -o -name "screenshot-*.png" \) 2>/dev/null
+   # Check for leftover temp files
+   find . -maxdepth 4 \( -name "*.tmp" -o -name "debug-*.log" -o -name "scratch-*" \) 2>/dev/null
+   # Check for running dev servers that should be stopped
+   lsof -ti :5000 2>/dev/null && echo "WARNING: API server still running on port 5000"
+   lsof -ti :5174 2>/dev/null && echo "WARNING: Web dev server still running on port 5174"
+   ```
+   If any artifacts or servers remain, clean them up now. Delete screenshots, temp files, and kill lingering servers.
+4. **Provide a final report** with:
    - Files modified per repo
    - Key decisions made (from architect's rationale)
    - Review verdict and any user-requested adjustments
    - Any manual steps needed (e.g., run migrations, regenerate API client)
    - Potential risks or follow-ups (from architect's risk assessment)
+   - Cleanup status (all temporary artifacts removed, servers stopped)
 
 ### Phase 7: Knowledge Extraction (Self-Improvement)
 
@@ -563,7 +580,8 @@ Review the entire task execution — architect spec, engineer reports, reviewer 
 
 - **You are a router, not an explorer.** If you're tempted to read source code or run searches to understand something, delegate to the architect instead. The only files you read directly are knowledge base files (Phase 0/7).
 - **Do not stop between phases.** After each agent returns, immediately proceed to the next phase. The only phases where you wait for user input are Phase 2 (approval) and Phase 5 (feedback).
-- **Shut down servers after work is complete.** If you or any agent started the API server (`port 5000`) or Web dev server (`port 5174`) during the task, shut them down in Phase 6 before the final report. Use `lsof -ti :5000 | xargs kill` and `lsof -ti :5174 | xargs kill`. Never leave background processes running after the orchestration completes.
+- **Shut down servers and clean up after work is complete.** If you or any agent started the API server (`port 5000`) or Web dev server (`port 5174`) during the task, shut them down in Phase 6 before the final report. Use `lsof -ti :5000 | xargs kill` and `lsof -ti :5174 | xargs kill`. Never leave background processes running after the orchestration completes.
+- **Enforce cleanup from all agents.** Every agent must delete temporary artifacts (Playwright screenshots, test entities, temp files, debug logs) before reporting completion. If an agent's report doesn't confirm cleanup, re-delegate with cleanup instructions. The final Phase 6 sweep catches anything agents missed.
 - If the task only affects ONE side (API-only or Web-only), delegate to just that agent. Don't force full-stack changes when they're not needed.
 - **Small/trivial tasks** (typo fix, single-line config change) can skip the architect phase. Use your judgment — if the change is obvious and self-contained, delegate directly to the implementing agent.
 - If the REVISION_PLAN.md is relevant to the task, pass it to the architect — don't read it yourself.

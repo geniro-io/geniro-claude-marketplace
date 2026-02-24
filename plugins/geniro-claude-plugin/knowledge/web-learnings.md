@@ -51,6 +51,13 @@ Accumulated knowledge about the Geniro Web codebase (`geniro-web/`). Updated aut
 - **Where**: `pages/graphs/hooks/useGraphRevisions.tsx`, `pages/graphs/details.tsx`
 - **Applies to**: Any polling fallback that detects state changes — must refresh ALL dependent state, not just the polled entity
 
+### [2026-02-23] Gotcha: `messages` state in useEffect dependency causes infinite API loop
+- **What happened**: After page reload and clicking a thread, the app sent infinite GET requests for messages
+- **Root cause**: `messages` object was in the auto-load effect's dependency array in `page.tsx`. Every WebSocket message updated `messages` state → re-triggered the effect → read stale `loading: false` from `messageMetaRef` (one render cycle behind) → fired another API request → infinite loop
+- **Fix**: (1) Remove `messages` from dependency array, use `messagesRef.current` instead. (2) Add `loadingThreadsRef = useRef<Set<string>>` as synchronous concurrency guard (immune to React's batched state updates). (3) Change `updateMessages(id, () => fetched)` to `updateMessages(id, (prev) => mergeMessagesReplacingStreaming(prev, fetched))` to preserve WebSocket-delivered messages.
+- **Where**: `pages/chats/hooks/useChatsMessages.ts`, `pages/chats/page.tsx`
+- **Prevention**: Never include frequently-updating state objects (like message maps) in useEffect dependency arrays that trigger API calls. Use refs for read-without-retrigger. For async operation guards, use synchronous `useRef<Set>` — not state-synced refs which lag by one render.
+
 ## Component Patterns
 
 <!-- Reusable UI patterns discovered. Format:

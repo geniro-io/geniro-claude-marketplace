@@ -9,6 +9,7 @@ tools:
   - Glob
   - Grep
   - Task
+  - WebSearch
 model: opus
 maxTurns: 60
 ---
@@ -281,6 +282,32 @@ Use the **Playwright MCP** tools to verify your changes:
 - **Real-time behavior**: WebSocket events, polling, and live updates work correctly
 - **No regressions**: Existing features on the same page still work
 
+### Cleanup After Verification (MANDATORY)
+
+After visual verification is complete, **delete all temporary artifacts** before reporting:
+
+1. **Delete ALL Playwright screenshots** — remove every `.png`/`.jpeg` screenshot file created during verification:
+   ```bash
+   # Find and delete Playwright screenshots created during this session
+   find . -maxdepth 3 -name "page-*.png" -o -name "page-*.jpeg" -o -name "screenshot-*.png" | xargs rm -f 2>/dev/null
+   # Also check common output directories
+   rm -f /tmp/page-*.png /tmp/page-*.jpeg /tmp/screenshot-*.png 2>/dev/null
+   ```
+2. **Delete ALL test entities** created during Playwright verification — navigate back to the app and delete any `[TEST]` prefixed graphs, threads, or other entities you created. The app must be left in exactly the same state as before your testing.
+3. **Stop the dev server** if you started it:
+   ```bash
+   lsof -ti :5174 | xargs kill 2>/dev/null
+   ```
+4. **Remove any temporary files** you created (scratch files, debug logs, temp configs).
+
+**Verify cleanup is complete** — run a quick check:
+```bash
+# Confirm no leftover screenshots
+find . -maxdepth 3 -name "page-*.png" -o -name "page-*.jpeg" 2>/dev/null
+```
+
+If any artifacts remain, delete them. **The task is NOT done until cleanup is verified.**
+
 ### Reporting
 
 Include a **"Visual Verification"** section in your completion report:
@@ -288,9 +315,10 @@ Include a **"Visual Verification"** section in your completion report:
 - Screenshots taken (describe what was checked)
 - Interactions tested and results observed
 - Any visual issues found and fixed
+- **Cleanup completed**: screenshots deleted, test entities removed, servers stopped
 - If Playwright MCP tools were not available, state this explicitly
 
-**The task is NOT done until both `full-check` passes AND visual verification is complete.** If Playwright tools are unavailable, report this so the orchestrator handles verification.
+**The task is NOT done until `full-check` passes, visual verification is complete, AND all temporary artifacts are cleaned up.** If Playwright tools are unavailable, report this so the orchestrator handles verification.
 
 ---
 
@@ -313,13 +341,38 @@ Include a **"Visual Verification"** section in your completion report:
 
 ---
 
-## Environment Hygiene
+## Container Runtime Safety (MANDATORY)
+
+**NEVER start, stop, or manage Docker/Podman containers yourself.** The Geniro project may use Docker or Podman depending on the developer's environment.
+
+1. **Read `geniro-web/claude.md`** and **`geniro/CLAUDE.md`** to check which container runtime and services the project uses.
+2. **Check if the API server is running** before Playwright verification (the frontend needs it):
+   ```bash
+   lsof -i :5000 2>/dev/null
+   ```
+3. **If the API server is NOT running**, report this to the orchestrator: "API server on port 5000 is not running. Playwright verification requires a running backend. The user needs to start it manually."
+4. **NEVER run `docker`/`podman` commands directly** — no `docker run`, `docker start`, `docker compose`, `podman run`, etc. Container management is the user's responsibility.
+5. **NEVER attempt to start `pnpm deps:up`** — this starts container infrastructure and requires the correct runtime configured on the host.
+
+---
+
+## Environment Hygiene (MANDATORY — zero tolerance for leftover artifacts)
 
 - Prefer existing project tooling over ad-hoc temporary scripts.
-- If you create temporary artifacts (scratch files, debug logs), remove them before finishing.
+- **Delete ALL temporary artifacts before reporting completion:**
+  - Playwright screenshots (`.png`, `.jpeg` files created during verification)
+  - Test entities created in the app (graphs, threads, etc. prefixed with `[TEST]`)
+  - Scratch files, debug logs, temp configs
+  - Any files not part of the intentional implementation
 - Only intentional, task-relevant changes should remain when you report completion.
 - Clean up large debug outputs. Never leave sensitive data in logs or temporary files.
 - **Shut down any servers you started.** If you started the dev server (`pnpm dev`) or any other background process during your task, you MUST stop it before finishing. Use `kill` with the PID or `lsof -ti :5174 | xargs kill` to stop the dev server. Never leave background processes running after your task is complete.
+- **Final cleanup check** — before your final report, run:
+  ```bash
+  # Verify no leftover screenshots or temp files
+  find . -maxdepth 3 \( -name "page-*.png" -o -name "page-*.jpeg" -o -name "screenshot-*.png" -o -name "*.tmp" \) 2>/dev/null
+  ```
+  If anything is found, delete it.
 
 ---
 
