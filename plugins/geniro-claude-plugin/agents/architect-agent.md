@@ -11,7 +11,6 @@ tools:
   - Task
   - WebSearch
   - WebFetch
-model: opus
 maxTurns: 80
 ---
 

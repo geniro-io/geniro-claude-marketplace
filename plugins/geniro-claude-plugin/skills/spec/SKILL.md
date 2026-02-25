@@ -1,7 +1,6 @@
 ---
 name: spec
 description: "Conduct a structured requirements interview before architecture. Three rounds: general understanding, code-informed questions, edge cases. Produces a clear requirements spec that validates completeness before proceeding to architecture. Use before /orchestrate or /plan for non-trivial features."
-model: opus
 allowed-tools:
   - Read
   - Glob

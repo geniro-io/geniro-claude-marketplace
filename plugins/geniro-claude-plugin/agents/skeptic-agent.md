@@ -7,7 +7,6 @@ tools:
   - Grep
   - Bash
   - Task
-model: opus
 maxTurns: 40
 ---
 

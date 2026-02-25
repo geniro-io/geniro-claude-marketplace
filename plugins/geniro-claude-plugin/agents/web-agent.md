@@ -10,7 +10,6 @@ tools:
   - Grep
   - Task
   - WebSearch
-model: opus
 maxTurns: 60
 ---
 

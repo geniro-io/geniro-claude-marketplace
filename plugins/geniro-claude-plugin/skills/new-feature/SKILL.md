@@ -1,7 +1,6 @@
 ---
 name: new-feature
 description: "Create a new feature or task spec via structured interview. Asks clarifying questions, explores the codebase, and saves a complete spec to .claude/project-features/. Use when you want to plan a feature before implementing it with /orchestrate."
-model: opus
 allowed-tools:
   - Read
   - Glob

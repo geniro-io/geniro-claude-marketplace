@@ -8,7 +8,6 @@ tools:
   - Bash
   - Task
   - WebSearch
-model: opus
 maxTurns: 80
 ---
 
