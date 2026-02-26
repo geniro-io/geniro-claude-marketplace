@@ -97,11 +97,32 @@ After Round 2 answers, present a comprehensive edge case checklist via `AskUserQ
 
 For each question, propose your recommended handling as the first option (with "(Recommended)" suffix), and offer alternatives. The user picks which approach they prefer.
 
-Wait for the user to respond before producing the spec.
+Wait for the user to respond before continuing.
+
+### Follow-Up Rounds (as many as needed)
+
+After Round 3, **assess whether you have enough information to write a complete spec.** If any of the following are true, run additional follow-up rounds before producing the spec:
+
+- A user answer was ambiguous, vague, or contradictory — ask for clarification
+- The user selected "Other" and provided a custom answer that raises new questions
+- Codebase exploration revealed complexities the user hasn't addressed yet
+- You cannot confidently fill a required spec section (Requirements, Data Model, API Changes, UI Changes, Edge Cases)
+- The user's answers in one round conflict with answers from a previous round
+
+**For each follow-up round:**
+1. Explain briefly (1 sentence) what's still unclear and why
+2. Ask **1–4 targeted questions** via `AskUserQuestion` to resolve the gaps
+3. Wait for the user to respond
+4. Re-assess — if gaps remain, run another follow-up round
+
+**Stop asking follow-up questions when:**
+- You can confidently write every section of the spec
+- The user signals they want to wrap up ("that's enough", "just write it", "move on")
+- You've done 3+ follow-up rounds — at that point, make your best judgment for remaining gaps and note assumptions in the "Open Questions" section
 
 ## Output: Requirements Specification
 
-After all three rounds, produce the final spec:
+After all rounds are complete and you have sufficient clarity, produce the final spec:
 
 ```markdown
 # Requirements Spec: [Feature Name]
