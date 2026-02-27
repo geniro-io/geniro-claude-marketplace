@@ -47,6 +47,7 @@ geniro-claude-marketplace/
     │   ├── architect-agent.md         # Design & exploration
     │   ├── api-agent.md               # Backend implementation
     │   ├── web-agent.md               # Frontend implementation
+    │   ├── dist-agent.md              # Distribution / Helm chart (geniro-dist/)
     │   ├── reviewer-agent.md          # Code review & quality gate
     │   ├── skeptic-agent.md           # Spec validation (mirage detection)
     │   ├── security-auditor-agent.md  # OWASP security review
@@ -60,6 +61,7 @@ geniro-claude-marketplace/
     │   ├── plan/                      # Architect-only command
     │   ├── api-task/                  # Direct API task command
     │   ├── web-task/                  # Direct Web task command
+    │   ├── dist-task/                 # Direct Dist task command
     │   ├── review/                    # Direct review command
     │   ├── learn/                     # Knowledge base management
     │   ├── spec/                      # Requirements interview (ad-hoc)
@@ -76,6 +78,7 @@ geniro-claude-marketplace/
 - **Orchestrator** (sonnet) — coordinates only, never explores code. Delegates all exploration to the architect.
 - **Architect** (opus) — explores codebases, produces specs with execution waves, implements minor improvements directly.
 - **API/Web agents** (opus) — implement code following the architect's spec.
+- **Dist agent** (inherit/opus) — manages Helm charts, Kubernetes deployment config, and dependency versions in `geniro-dist/`. Uses web search to verify latest versions and best practices.
 - **Reviewer** (opus) — reviews code with security checklist, loops with implementing agents until approved.
 - **Skeptic** (opus) — validates architect specs against real codebase before user sees them. Catches hallucinated paths/functions.
 - **Security Auditor** (opus) — OWASP Top 10 review during Phase 4, runs alongside reviewer.

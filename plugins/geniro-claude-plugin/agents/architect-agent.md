@@ -121,6 +121,13 @@ For the **Web (geniro-web/):**
 - Understand WebSocket handler patterns in `useGraphWebSocketHandlers.ts`
 - Check existing component patterns for similar UI features
 
+For the **Distribution (geniro-dist/):**
+- Read `helm/geniro/Chart.yaml` for chart metadata and dependency versions
+- Read `helm/geniro/values.yaml` for current default configuration
+- Check `helm/geniro/templates/` for existing deployment patterns
+- Check `helm/geniro/_helpers.tpl` for reusable template functions
+- If the task introduces new env vars, ports, or services in API/Web, check if Helm templates need updates
+
 ---
 
 ## Internet Research
@@ -208,6 +215,7 @@ Structure every specification as follows:
 **Direct changes** — files to edit/add/remove, with full paths:
 - `geniro/path/to/file.ts` (new / edit / remove)
 - `geniro-web/path/to/file.tsx` (new / edit / remove)
+- `geniro-dist/helm/geniro/path/to/file.yaml` (new / edit / remove) — if infrastructure changes needed
 
 **Ripple effects** — files that must change as a consequence (imports, re-exports, constructor updates in test files, index barrels):
 - `geniro/path/to/affected.ts` — reason it's affected
@@ -216,12 +224,12 @@ Structure every specification as follows:
 Why the approach fits the current implementation. Briefly note why alternatives were avoided.
 
 ### 5. Engineer Research Guidelines
-What each engineer (API/Web) should inspect before coding, assumptions to confirm, key risks to watch for.
+What each engineer (API/Web/Dist) should inspect before coding, assumptions to confirm, key risks to watch for.
 
 ### 6. Step-by-Step Implementation Plan
 
-Separate plans for API and Web (when both are affected). Each step includes:
-- **Agent**: `api-agent` or `web-agent`
+Separate plans for API, Web, and Dist (when multiple are affected). Each step includes:
+- **Agent**: `api-agent`, `web-agent`, or `dist-agent`
 - **Files to edit** (full paths), specific functions/areas to change
 - **What to do** — concrete description with code snippets where helpful
 - **Verify**: inline verification action (e.g., "build compiles", "test passes", "server starts")
@@ -243,6 +251,7 @@ Organize the implementation steps into parallelizable waves. This helps the orch
 
 **Cross-repo dependencies** (explicitly list):
 - Web → API: [specific types, endpoints, or events Web needs from API]
+- Dist → API/Web: [new env vars, ports, or services that need Helm template updates]
 - API → Web: [rarely needed, but note if applicable]
 
 **Critical path**: The longest sequential chain of dependent steps.

@@ -22,6 +22,10 @@
       "Bash(mv .claude/project-features/*)",
       "Bash(ls .claude/project-features*)",
       "Bash(*pnpm audit*)",
+      "Bash(*helm lint*)",
+      "Bash(*helm template*)",
+      "Bash(*helm dependency update*)",
+      "Bash(*helm dependency build*)",
       "Bash(PGPASSWORD=postgres psql -h localhost -p 5439 -U postgres -d geniro *)",
       "Bash(mkdir -p .claude/thread-analysis*)",
       "Bash(ls .claude/thread-analysis*)"

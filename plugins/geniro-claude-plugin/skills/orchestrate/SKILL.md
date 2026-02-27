@@ -30,7 +30,7 @@ ALL other phases: proceed immediately after the agent returns. Do NOT pause betw
 
 You are a **coordinator**, not an explorer or implementer. You:
 - **Delegate** exploration to the `architect-agent`
-- **Delegate** implementation to `api-agent` and `web-agent`
+- **Delegate** implementation to `api-agent`, `web-agent`, and `dist-agent`
 - **Delegate** code review to `reviewer-agent`
 - **Present** information to the user and ask clarifying questions when needed
 - **Route** feedback between agents (reviewer findings → implementing agents → reviewer again)
@@ -224,9 +224,9 @@ Wait for the user to confirm before proceeding to implementation. If the user re
 
 **→ After user approves, immediately proceed to Phase 3.**
 
-### Phase 3: Implementation (API + Web Agents)
+### Phase 3: Implementation (API + Web + Dist Agents)
 
-Using the architect's specification, delegate to the `api-agent` and `web-agent`.
+Using the architect's specification, delegate to the `api-agent`, `web-agent`, and/or `dist-agent`.
 
 **Each delegation must include** the relevant sections from the architect's spec:
 - The specific implementation steps assigned to that agent
@@ -292,9 +292,36 @@ Work in the geniro-web/ directory.
 - After completing, report: files created/modified, API client regenerated (yes/no), full-check result, Playwright verification result, cleanup completed (yes/no — list what was cleaned), any new patterns/gotchas discovered
 ```
 
+**Delegation template for Dist tasks (infrastructure/Helm changes):**
+
+Only delegate to the `dist-agent` when the architect's spec includes changes to the distribution repository (`geniro-dist/`). Common triggers: new deployment component, dependency version updates, Helm template changes, values.yaml modifications, ingress/service configuration, or infrastructure-related tasks.
+
+```
+Work in the geniro-dist/ directory.
+
+## Architect Specification
+[paste the Dist-relevant parts of the spec: steps, files, configuration changes]
+
+## Knowledge Context
+[paste relevant entries from architecture-decisions.md — only items that apply to infrastructure]
+
+## API/Web Changes
+[If the API or Web agents made changes that affect deployment (new env vars, new ports, new services), list them here so the dist-agent can update Helm templates accordingly. If no deployment-affecting changes: "No deployment-affecting changes from API/Web agents."]
+
+## Requirements
+- Follow the architect's step-by-step plan
+- Follow Helm and Kubernetes best practices
+- Search the web for latest stable versions when updating dependencies
+- Validate all changes: `helm lint` + `helm template` with both ci/test-values.yaml and examples/quickstart-values.yaml
+- Update values.yaml documentation (inline comments) for any new or changed values
+- Update README.md if user-facing configuration changed
+- Update examples/quickstart-values.yaml if new configuration options were added
+- After completing, report: files created/modified, helm lint result, template render result, version changes (if any), security considerations, any follow-ups
+```
+
 **Execution rules:**
-- **Independent tasks can run in parallel** — launch both API and Web agents simultaneously when their tasks don't depend on each other.
-- **Dependent tasks must be sequential** — if Web needs new API types, wait for the API agent to finish first. The architect's spec identifies these dependencies.
+- **Independent tasks can run in parallel** — launch API, Web, and Dist agents simultaneously when their tasks don't depend on each other.
+- **Dependent tasks must be sequential** — if Web needs new API types, wait for the API agent to finish first. If the Dist agent needs to know about new env vars or ports from the API agent, wait for the API agent to finish first. The architect's spec identifies these dependencies.
 
 **If an engineer reports a structural blocker** (spec mismatch with actual code, approach not feasible):
 1. Delegate back to the `architect-agent` to explore the issue and produce a spec revision addendum. The architect does the investigation — you just route the blocker to them.
@@ -306,14 +333,16 @@ Before moving to Phase 4, confirm that **every** delegated agent has returned an
 1. **Check the agent returned** — if a Task delegation has not returned yet, wait for it. Never proceed with partial results.
 2. **Check the status** — each agent must report:
    - Files created/modified
-   - `full-check` result (pass/fail)
+   - `full-check` result (pass/fail) — or `helm lint` + `helm template` result for the dist-agent
    - Any blockers or deviations from the spec
 3. **Check testing completeness:**
    - **API agent**: Must report both unit test results AND integration test results (with specific `pnpm test:integration <file>` commands run). If the agent skipped integration tests for a new feature, re-delegate with explicit instructions to write them.
    - **Web agent**: Must report Playwright visual verification results (pages visited, screenshots reviewed, interactions tested). **"Logic-only change" or "no visual changes" is NOT a valid justification for skipping Playwright.** The only acceptable reason to skip is if Playwright MCP tools were not available in the agent's session — in that case, YOU (the orchestrator) must perform the Playwright verification yourself before proceeding. If the agent skipped without this reason, re-delegate with instructions to complete verification.
+   - **Dist agent**: Must report `helm lint` and `helm template` results (pass/fail). If lint or template rendering failed, re-delegate with instructions to fix.
 4. **Check cleanup completed:**
    - **API agent**: Must confirm no leftover temp files, debug logs, or scratch scripts. Must confirm servers shut down.
    - **Web agent**: Must confirm ALL Playwright screenshots deleted, ALL test entities removed from the app, dev server stopped, no leftover temp files. If the agent did not report cleanup, re-delegate with instructions: "Clean up all temporary artifacts: delete Playwright screenshots, remove test entities from the app, stop dev server, remove temp files. Report what was cleaned."
+   - **Dist agent**: No special cleanup needed — just verify no temporary files were left behind.
 5. **If any agent failed `full-check`** — do NOT proceed. Re-delegate to that agent with instructions to fix the failures.
 6. **If any agent reported a blocker** — route it to the architect for investigation before proceeding.
 7. **Only when ALL agents report success** (all `full-check` passes, all required tests written and passing, cleanup confirmed, no unresolved blockers) → proceed to Phase 4.
@@ -328,7 +357,7 @@ After all implementing agents complete, **run three review agents in parallel** 
 
 **1. Code Reviewer** — delegate to `reviewer-agent`:
 ```
-Review the recent changes made by the API and Web agents.
+Review the recent changes made by the API, Web, and Dist agents.
 
 ## Architect Specification Summary
 [key points from the spec: approach, scope, test scenarios]
@@ -342,6 +371,9 @@ Review the recent changes made by the API and Web agents.
 ## Files changed (Web)
 - [list of changed files in geniro-web/]
 
+## Files changed (Dist)
+- [list of changed files in geniro-dist/ — if no dist changes, omit this section]
+
 ## Knowledge Context
 [paste relevant entries from review-feedback.md — recurring issues to check for]
 
@@ -351,7 +383,7 @@ Review the recent changes made by the API and Web agents.
 ## Key test scenarios to verify
 - [list from architect's spec]
 
-Please review for correctness, architecture fit, AI-generated code anti-patterns, test quality, and cross-repo consistency.
+Please review for correctness, architecture fit, AI-generated code anti-patterns, test quality, and cross-repo consistency. For Dist changes: check Helm template correctness, values.yaml consistency, and security posture.
 ```
 
 **2. Security Auditor** — delegate to `security-auditor-agent`:
@@ -367,7 +399,10 @@ Perform a security audit on the recent implementation changes.
 ## Files changed (Web)
 - [list of changed files in geniro-web/]
 
-Audit for OWASP Top 10 issues. Focus on: injection risks in new queries, auth decorators on new endpoints, input validation on new DTOs, XSS in new React components, sensitive data in logs/responses.
+## Files changed (Dist)
+- [list of changed files in geniro-dist/ — if no dist changes, omit this section]
+
+Audit for OWASP Top 10 issues. Focus on: injection risks in new queries, auth decorators on new endpoints, input validation on new DTOs, XSS in new React components, sensitive data in logs/responses. For Dist changes: check for hardcoded secrets in templates, insecure default values, privileged container configurations, and missing TLS settings.
 ```
 
 **3. Test Reviewer** — delegate to `test-reviewer-agent`:
@@ -543,10 +578,14 @@ After the user confirms they're satisfied:
    ```
    If this was NOT from the backlog (ad-hoc description), skip this step.
 
-2. **Verify both repos build** one final time:
+2. **Verify all repos build** one final time:
    ```bash
    cd geniro && pnpm run full-check
    cd geniro-web && pnpm run full-check
+   ```
+   If dist changes were made, also verify:
+   ```bash
+   cd geniro-dist && helm lint ./helm/geniro -f ./helm/geniro/ci/test-values.yaml
    ```
 3. **Re-run related integration tests** one final time (delegate to `api-agent` if any Phase 5 changes were made to API code):
    ```bash
@@ -628,7 +667,8 @@ Knowledge file locations (all in `.claude/project-knowledge/`):
 - **Do not stop between phases.** After each agent returns, immediately proceed to the next phase. The only phases where you wait for user input are Phase 2 (approval) and Phase 5 (feedback).
 - **Shut down servers and clean up after work is complete.** If you or any agent started the API server (`port 5000`) or Web dev server (`port 5174`) during the task, shut them down in Phase 6 before the final report. Use `lsof -ti :5000 | xargs kill` and `lsof -ti :5174 | xargs kill`. Never leave background processes running after the orchestration completes.
 - **Enforce cleanup from all agents.** Every agent must delete temporary artifacts (Playwright screenshots, test entities, temp files, debug logs) before reporting completion. If an agent's report doesn't confirm cleanup, re-delegate with cleanup instructions. The final Phase 6 sweep catches anything agents missed.
-- If the task only affects ONE side (API-only or Web-only), delegate to just that agent. Don't force full-stack changes when they're not needed.
+- If the task only affects ONE side (API-only, Web-only, or Dist-only), delegate to just that agent. Don't force full-stack changes when they're not needed.
+- **Infrastructure tasks** — if the task involves Helm charts, Kubernetes deployment, dependency versions, or distribution packaging, delegate to the `dist-agent`. The dist-agent works in `geniro-dist/` (a separate repo with the umbrella Helm chart). If the API or Web agents introduced new env vars, ports, or services, the dist-agent may need to update Helm templates/values to match.
 - **Small/trivial tasks** (typo fix, single-line config change) can skip the architect phase. Use your judgment — if the change is obvious and self-contained, delegate directly to the implementing agent.
 - If the REVISION_PLAN.md is relevant to the task, pass it to the architect — don't read it yourself.
 - The API uses WebSocket notifications (`NotificationEvent` enum) to push real-time updates to the frontend. If you add new events, both sides need updates.
