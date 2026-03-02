@@ -252,6 +252,7 @@ Work in the geniro/ directory.
 - Write/update unit tests (.spec.ts) covering the architect's key test scenarios
 - **Write integration tests (.int.ts) — MANDATORY for new features.** Place them in `src/__tests__/integration/<feature>/`. Test the complete business workflow through direct service calls: happy path + 2-3 edge/error cases. Follow existing integration test patterns (see `src/__tests__/integration/` for examples). Run each integration test file individually: `pnpm test:integration src/__tests__/integration/<path>.int.ts`
 - Run `pnpm run full-check` in the geniro/ root and fix any errors
+- **MANDATORY DATA SAFETY RULE**: NEVER run `docker volume rm`, `podman volume rm`, `docker compose down -v`, `podman compose down -v`, `DROP TABLE`, `DROP DATABASE`, `TRUNCATE`, or any command that removes local database data or Docker/Podman volumes. Local data is untouchable.
 - **Shut down any servers you started** (e.g., `pnpm start:dev`). Use `lsof -ti :5000 | xargs kill` before reporting completion. Never leave background processes running.
 - **Clean up ALL temporary artifacts** before reporting: delete temp files, debug logs, scratch scripts. Verify no untracked garbage remains (`git status --short | grep "^??"`). Only intentional implementation files should remain.
 - After completing, report: files created/modified, full-check result, integration test results (commands run + pass/fail), cleanup completed (yes/no), any new patterns/gotchas discovered
@@ -287,6 +288,7 @@ Work in the geniro-web/ directory.
   6. Test interactions (clicks, forms, modals) with Playwright MCP click / fill form
   7. Report: pages visited, screenshots reviewed, issues found/fixed
   If Playwright MCP tools are not available in the agent session, report this clearly — the orchestrator will perform visual verification instead. Do NOT silently skip.
+- **MANDATORY DATA SAFETY RULE**: NEVER run `docker volume rm`, `podman volume rm`, `docker compose down -v`, `podman compose down -v`, `DROP TABLE`, `DROP DATABASE`, `TRUNCATE`, or any command that removes local database data or Docker/Podman volumes. Local data is untouchable.
 - **Shut down any servers you started** (e.g., `pnpm dev`). Use `lsof -ti :5174 | xargs kill` before reporting completion. Never leave background processes running.
 - **Clean up ALL temporary artifacts** before reporting: delete ALL Playwright screenshots (`find . -maxdepth 3 -name "page-*.png" -o -name "page-*.jpeg" | xargs rm -f`), delete ALL test entities created during Playwright verification (navigate back and remove `[TEST]` entities), remove temp files, debug logs, scratch scripts. Only intentional implementation files should remain.
 - After completing, report: files created/modified, API client regenerated (yes/no), full-check result, Playwright verification result, cleanup completed (yes/no — list what was cleaned), any new patterns/gotchas discovered
@@ -595,6 +597,12 @@ After the user confirms they're satisfied:
    ```
    Run a full cleanup sweep of the workspace after task completion.
 
+   ## MANDATORY DATA SAFETY RULE
+   NEVER run `docker volume rm`, `podman volume rm`, `docker compose down -v`, `podman compose down -v`,
+   `DROP TABLE`, `DROP DATABASE`, `TRUNCATE`, or any command that removes local database data or
+   Docker/Podman volumes. The local PostgreSQL database and all container volumes are untouchable.
+   This rule has no exceptions — cleanup means temp files and screenshots only, NEVER databases or volumes.
+
    ## Repos to check
    - geniro/ (API backend)
    - geniro-web/ (Web frontend)
@@ -663,6 +671,7 @@ Knowledge file locations (all in `.claude/project-knowledge/`):
 
 ## Important Notes
 
+- **MANDATORY DATA SAFETY RULE — NO EXCEPTIONS**: You and every delegated agent MUST NEVER run `docker volume rm`, `podman volume rm`, `docker compose down -v`, `podman compose down -v`, `DROP TABLE`, `DROP DATABASE`, `TRUNCATE`, or any command that removes local database data or Docker/Podman volumes. The local PostgreSQL database and all container volumes are untouchable. This rule applies to every phase, every agent, and every cleanup operation. If an agent proposes any such command, reject it and re-delegate with explicit instructions not to touch local data.
 - **You are a router, not an explorer.** If you're tempted to read source code or run searches to understand something, delegate to the architect instead. The only files you read directly are knowledge base files (Phase 0/7).
 - **Do not stop between phases.** After each agent returns, immediately proceed to the next phase. The only phases where you wait for user input are Phase 2 (approval) and Phase 5 (feedback).
 - **Shut down servers and clean up after work is complete.** If you or any agent started the API server (`port 5000`) or Web dev server (`port 5174`) during the task, shut them down in Phase 6 before the final report. Use `lsof -ti :5000 | xargs kill` and `lsof -ti :5174 | xargs kill`. Never leave background processes running after the orchestration completes.

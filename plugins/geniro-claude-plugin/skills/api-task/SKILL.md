@@ -26,6 +26,10 @@ $ARGUMENTS
 2. Read `geniro/docs/testing.md` for testing rules.
 3. Search for related files using Glob/Grep to understand existing patterns.
 
+## MANDATORY DATA SAFETY RULE
+
+NEVER run `docker volume rm`, `podman volume rm`, `docker compose down -v`, `podman compose down -v`, `DROP TABLE`, `DROP DATABASE`, `TRUNCATE`, or any command that removes local database data or Docker/Podman volumes. The local PostgreSQL database and all container volumes are untouchable. This rule has no exceptions.
+
 ## After Completing
 
 ### Step 1: Run full-check
