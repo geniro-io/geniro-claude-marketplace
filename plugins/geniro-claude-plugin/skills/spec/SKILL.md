@@ -21,9 +21,9 @@ $ARGUMENTS
 
 ## Interview Protocol
 
-### CRITICAL: Use AskUserQuestion for ALL questions
+### CRITICAL: Use AskUserQuestion for ALL questions (with fallback)
 
-**NEVER present questions as plain text.** Always use the `AskUserQuestion` tool so the user can select from predefined choices instead of typing.
+**Try `AskUserQuestion` first.** Always attempt to use the tool so the user can select from predefined choices.
 
 For every question you ask:
 1. **Formulate 2–4 concrete answer options** based on your understanding of the feature and codebase patterns
@@ -41,6 +41,35 @@ For every question you ask:
 - Label: "WebSocket (real-time)", Description: "Push updates instantly via existing Socket.IO infrastructure"
 - Label: "Polling", Description: "Client polls API periodically, simpler but adds latency"
 - Label: "Both", Description: "WebSocket primary, polling as fallback"
+
+### FALLBACK: Empty Answer Detection
+
+**After every `AskUserQuestion` call, check if the answers are empty.** The tool sometimes auto-completes without the user actually selecting anything. Signs of empty/auto-completed answers:
+- The tool result says "User has answered your questions" but contains no actual selections
+- All answer values are empty strings, null, or missing
+- The answers object has no meaningful content
+
+**If answers are empty, IMMEDIATELY fall back to plain text:**
+1. Present the SAME questions as a numbered list with lettered options
+2. Clearly label which option you recommend with "(Recommended)"
+3. Ask the user to reply with their choices (e.g., "1A, 2B, 3C" or just describe their preference)
+4. **Do NOT proceed without real answers** — wait for the user to respond
+
+**Plain text fallback format:**
+```
+It looks like the question picker didn't capture your answers. Let me ask as plain text instead:
+
+**1. [Question text]**
+   a) [Option 1 label] — [description]
+   b) [Option 2 label] — [description]
+   c) [Option 3 label] — [description]
+
+**2. [Question text]**
+   a) [Option 1 label] — [description]
+   b) [Option 2 label] — [description]
+
+Please reply with your choices (e.g., "1a, 2b") or describe your preference.
+```
 
 ### Round 1: General Understanding
 
@@ -182,7 +211,7 @@ Present the spec to the user for final confirmation. If they approve, it's ready
 
 ## Rules
 
-- **ALWAYS use AskUserQuestion** — never present interview questions as plain text. Every question must have selectable choices so the user can click instead of type
+- **Try AskUserQuestion first, fall back to plain text** — attempt the tool for every question. If answers come back empty, immediately re-present as numbered plain-text questions and wait for the user to reply
 - **Be concise in questions** — 1-2 sentences per question, not paragraphs
 - **Don't repeat information** — if the user already stated something, reference it, don't ask again
 - **Don't over-interview** — if the feature is straightforward, skip unnecessary rounds
