@@ -65,23 +65,35 @@ cd geniro-web && git status --short | grep "^??" | grep -v "node_modules" | head
 
 Agents start dev servers and sometimes forget to stop them.
 
+**IMPORTANT:** Ports 5000 (API) and 5174 (Web) are the **default development ports** that the user typically keeps running. **NEVER kill processes on these ports.** Only detect and kill processes on non-default ports that agents may have started.
+
 **Detection:**
 ```bash
-# API server (port 5000)
-lsof -ti :5000 2>/dev/null
-# Web dev server (port 5174)
-lsof -ti :5174 2>/dev/null
-# Alternative common ports
+# Alternative/additional ports that agents might have started (NOT default ports)
 lsof -ti :3000 2>/dev/null
 lsof -ti :8080 2>/dev/null
+lsof -ti :4200 2>/dev/null
+lsof -ti :3001 2>/dev/null
 ```
 
-**Cleanup:** Kill any server found on ports 5000 or 5174:
+**Cleanup:** Kill any server found on non-default ports (3000, 8080, 4200, 3001, etc.) that appear to be geniro-related:
 ```bash
-lsof -ti :5000 | xargs kill 2>/dev/null
-lsof -ti :5174 | xargs kill 2>/dev/null
+# Only kill non-default port processes that look like geniro dev servers
+for port in 3000 8080 4200 3001; do
+  pid=$(lsof -ti :$port 2>/dev/null)
+  if [ -n "$pid" ]; then
+    cmd=$(ps -p $pid -o command= 2>/dev/null)
+    if echo "$cmd" | grep -qE "node.*geniro|vite|nest|pnpm"; then
+      echo "Killing geniro process on port $port (PID: $pid): $cmd"
+      kill $pid 2>/dev/null
+    else
+      echo "Non-geniro process on port $port (PID: $pid) — skipping: $cmd"
+    fi
+  fi
+done
 ```
-For ports 3000 and 8080, **report only** — these might be user-started processes.
+
+**DO NOT kill processes on ports 5000 or 5174** — these are the user's default dev servers.
 
 ### 5. Test Entities in the Application
 
@@ -134,7 +146,7 @@ ps aux | grep -E "pnpm.*(dev|start)" | grep -v grep | head -10
 Run these steps in order:
 
 1. **Detect all artifacts** — run all detection commands above in parallel (file checks, server checks, process checks)
-2. **Clean automatically** — delete screenshots, temp files, and stop servers on known ports (5000, 5174)
+2. **Clean automatically** — delete screenshots, temp files, and stop any agent-started servers on non-default ports (NOT 5000 or 5174)
 3. **Clean test entities** — if the API server is running, attempt to delete `[TEST]` entities. If you have entity IDs from agent reports, use them. Otherwise query the API.
 4. **Report everything** — produce the cleanup report (see format below)
 
@@ -148,19 +160,18 @@ Run these steps in order:
 ### Artifacts Found & Cleaned
 - [x] Deleted N Playwright screenshots: [list files]
 - [x] Deleted N temp files: [list files]
-- [x] Stopped server on port 5000 (PID: XXXX)
-- [x] Stopped server on port 5174 (PID: XXXX)
+- [x] Stopped agent-started server on port XXXX (PID: XXXX)
 - [x] Deleted N test entities from app: [list entity names/IDs]
 
 ### Artifacts Found & Reported (not auto-cleaned)
 - [ ] Untracked source file: geniro/apps/api/src/v1/foo/bar.ts (might be intentional)
-- [ ] Process on port 3000 (PID: XXXX) — not a known Geniro port, skipped
+- [ ] Non-geniro process on port 3000 (PID: XXXX) — skipped
 - [ ] Test entity "[TEST] Graph X" could not be deleted (API auth required) — user should delete manually via claude-test account
 
 ### Nothing Found
 - No Playwright screenshots detected
 - No temp files detected
-- No running servers on ports 5000/5174
+- No agent-started servers on non-default ports
 - No suspicious untracked files
 - No leftover test entities
 
@@ -177,7 +188,7 @@ Use **NEEDS ATTENTION ⚠️** if there are items in "Reported (not auto-cleaned
 - **Speed is priority** — you run at the end of the pipeline. Be fast. Use parallel commands.
 - **Never modify source code** — only delete screenshots, temp files, and kill processes.
 - **Never delete tracked files** — only delete untracked files that are clearly garbage (images, logs, tmp).
-- **Never kill processes on unknown ports** — only kill servers on ports 5000 and 5174.
+- **Never kill processes on the default dev ports (5000 and 5174)** — these are the user's long-running dev servers. Only kill geniro-related processes on non-default ports (3000, 8080, etc.) that agents may have started.
 - **Always produce a report** — even if nothing was found, confirm the workspace is clean.
 - **Be thorough** — check both `geniro/` and `geniro-web/` directories, plus `/tmp`.
 - **Never use long sleeps** — maximum single sleep is 60 seconds. If you need to wait for something, poll in a loop with `sleep 30` and check the condition each iteration. Exit the loop early when the condition is met.
