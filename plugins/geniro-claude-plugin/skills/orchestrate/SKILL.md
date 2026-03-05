@@ -4,9 +4,12 @@ description: "Break down a Geniro feature request into API and Web subtasks, the
 model: sonnet
 allowed-tools:
   - Read
+  - Write
   - Edit
   - Task
   - Bash
+  - EnterPlanMode
+  - ExitPlanMode
 argument-hint: "[feature description]"
 ---
 
@@ -19,7 +22,7 @@ You are the **Orchestrator** for the Geniro platform. Your job is to take a feat
 **You MUST drive the entire pipeline to completion.** After each agent finishes, immediately proceed to the next phase. Do NOT stop, summarize, or wait unless a phase explicitly says to wait for the user.
 
 Phases that WAIT for user input:
-- Phase 2 (User Approval) — present the spec, wait for confirmation
+- Phase 2 (User Approval) — call `ExitPlanMode` with the spec; Claude Code's plan UI handles the wait
 - Phase 5 (User Feedback) — present results, ask if changes needed
 
 ALL other phases: proceed immediately after the agent returns. Do NOT pause between phases.
@@ -49,6 +52,15 @@ If you need information to make a routing decision, ask the user or delegate to 
 ## Feature Request
 
 $ARGUMENTS
+
+## Plan Mode — Pre-Implementation Phases
+
+**Immediately on invocation, call `EnterPlanMode`** before doing anything else. Phases 0, 1, and 1b all run inside plan mode. Phase 2 (User Approval) exits plan mode via `ExitPlanMode`, which presents the architect's spec to the user through Claude Code's built-in plan approval UI.
+
+This means:
+- Phases 0 → 1 → 1b: run normally inside plan mode (Task delegations, Bash, Read all work)
+- Phase 2: write the spec summary to the plan file, call `ExitPlanMode` — do NOT just print text and wait
+- Phases 3+: proceed immediately after `ExitPlanMode` returns (user approved)
 
 ## Workflow
 
@@ -210,19 +222,22 @@ Additional context:
 
 **→ After validation passes (or user overrides), immediately proceed to Phase 2.**
 
-### Phase 2: User Approval
+### Phase 2: User Approval (ExitPlanMode)
 
-**Present the architect's specification to the user** for review and approval. Show them:
+**Write the architect's specification to the plan file** (the path is specified in the plan mode system message injected when you called `EnterPlanMode`), then call `ExitPlanMode`. The plan file must contain:
 - The high-level checklist (what will be built)
 - The risk assessment
 - The scope (which files will change in each repo)
 - The recommended approach and rationale
+- Validation summary (from Phase 1b: N claims verified, mirages found/0, requirements covered)
 
-Wait for the user to confirm before proceeding to implementation. If the user requests changes to the plan, delegate back to the architect for revision.
+Claude Code's built-in plan approval UI will display the plan file to the user and handle the confirmation prompt. Do **not** print the spec as chat text and wait manually — use `ExitPlanMode`.
 
-**Skip this phase** only for trivial/small tasks where the user explicitly said to "just do it."
+**If the user requests changes to the plan:** call `EnterPlanMode` again, delegate the revision to the `architect-agent`, update the plan file with the revised spec, then call `ExitPlanMode` again.
 
-**→ After user approves, immediately proceed to Phase 3.**
+**Skip this phase** only for trivial/small tasks where the user explicitly said to "just do it." In that case, skip `ExitPlanMode` and proceed directly to Phase 3.
+
+**→ After `ExitPlanMode` returns (user approved), immediately proceed to Phase 3.**
 
 ### Phase 3: Implementation (API + Web + Dist Agents)
 
